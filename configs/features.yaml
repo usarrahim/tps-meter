@@ -1,0 +1,11 @@
+# Model inputs (Phase 4). Shared by synthetic and real records.
+grid:
+  n_points: 256                 # log-time bins
+  span_ratio: 1.0e-3            # grid covers [t_end * span_ratio, t_end] (3 decades, tau^2 from ~1e-3 tau_end^2)
+  ref_bins: 8                   # theta_ref = mean theta over the last ref_bins bins
+derivative:
+  savgol_window: 15             # bins (odd), local quadratic fit in ln t
+  savgol_order: 2
+channels: [theta_rel, dtheta_dlnt_rel, log_count]
+scalars: [ln_theta_ref, ln_t_end, ln_P0, dT_max, thickness_mm, radius_mm, current_range]
+targets: [ln_k, ln_alpha, ln_G_c]

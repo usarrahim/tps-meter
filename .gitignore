@@ -1,0 +1,21 @@
+# Environment
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# Data and weights never go to git
+data/*
+!data/.gitkeep
+runs/*
+!runs/.gitkeep
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.onnx
+dist/
+
+# Notebooks checkpoints
+.ipynb_checkpoints/

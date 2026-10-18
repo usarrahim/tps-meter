@@ -1,0 +1,36 @@
+# Sensor and layer geometry — single source of truth (PROJECT_RULES.md).
+# All values in SI units (m, s, W, K).
+units: SI
+
+spiral:
+  n_rings: 20                 # m, concentric rings
+  outer_radius: 6.4e-3        # a [m]; ring radii r_i = i * a / m
+  trace_width: 0.10e-3        # b [m]
+  copper_thickness: 18.0e-6   # [m]
+
+electrical:
+  R0: 4.0                     # [ohm], measured per sensor
+  alpha_R: 0.0039             # [1/K], temperature coefficient of resistance, calibrated
+
+# Thin-film stack from the bottom sample to the top sample. The two sides are NOT symmetric.
+# Each layer is a lumped node (thermal resistance + heat capacity) per radial column.
+# The copper level holds copper on the traces and coverlay adhesive in the gaps between them.
+film:
+  outer_radius: 10.0e-3       # [m] Kapton disk radius (plan: 20 mm diameter active area)
+  stack:
+    - {name: polyimide_base,  thickness: 25.0e-6, material: polyimide}
+    - {name: copper_level,    thickness: 18.0e-6, material: copper, gap_material: adhesive, heater: true}
+    - {name: adhesive,        thickness: 15.0e-6, material: adhesive}
+    - {name: polyimide_cover, thickness: 12.5e-6, material: polyimide}
+
+# Nominal material properties (k [W/m/K], rho_cp [J/m^3/K]).
+# PI and adhesive k are varied in prior_v1.yaml.
+materials:
+  copper:    {k: 398.0, rho_cp: 3.45e6}
+  polyimide: {k: 0.19,  rho_cp: 1.58e6}   # Kapton-like, nominal
+  adhesive:  {k: 0.20,  rho_cp: 1.70e6}   # acrylic-like, nominal (placeholder)
+  air:       {k: 0.026, rho_cp: 1.2e3}    # gap between the samples outside the film
+
+samples:
+  default_radius: 25.0e-3     # [m]
+  default_thickness: 20.0e-3  # [m]

@@ -1,0 +1,41 @@
+# Numerical settings for the r-z finite-volume simulator. SI units.
+# `refine` in the simulator halves every cell size / growth exponent and the time step (convergence test).
+# Values chosen in Phase 2 from a mesh study (reports/phase2.md); see DECISIONS.md.
+units: SI
+
+mesh:
+  # Fine (trace-aligned) columns: film nodes + near zone of each sample
+  n_center: 2                 # minimum cells in [0, r_1 - b/2]
+  n_trace: 1                  # minimum cells across each trace (width b)
+  n_gap: 2                    # minimum cells across each gap between traces
+  edge_cell: 1.5e-6           # [m] cell width at every trace edge (copper-edge boundary layer ~20 um)
+  edge_growth: 1.15           # growth away from trace edges, in the gaps
+  trace_growth: 1.4           # growth inside the traces (copper is isothermal, coarser is enough)
+  r_growth: 1.05              # growth for r > a (late-time shape / alpha accuracy is sensitive to this)
+  dz_min: 5.0e-6              # [m] first sample cell next to the sensor plane
+  z_growth: 1.25              # growth in the near zone
+  z_split: 3.0e-4             # [m] near zone depth (~3 trace widths)
+  # Coarse columns for the far zone (subset of the fine faces), coupled by linear interpolation
+  coarse_dr: 1.0e-4           # [m] coarse cell width under the sensor
+  coarse_growth: 1.03         # coarse width >= (coarse_growth - 1)(r - a) outside the sensor
+  z_growth_far: 1.05          # growth in the far zone (far-field error ~ (g-1)^2)
+
+time:
+  # TR-BDF2 (gamma = 2 - sqrt 2; L-stable, 2nd order, one matrix for both stages -> 2 solves per step);
+  # the first level uses implicit Euler + Richardson extrapolation to damp the power-step start-up.
+  # dt doubles every `steps_per_level` steps, so one new LU factorisation per level.
+  scheme: trbdf2               # trbdf2 | richardson_ie
+  dt0: 1.0e-4                 # [s] first step (finer than the 1 ms in the brief: 1200 SPS samples start at 0.83 ms)
+  dt0_fraction: 0.05          # when a later first output time is given: dt0 = max(dt0, fraction * t_out_min)
+  steps_per_level: 12         # M0 alpha within ~0.02 % of a 64-step reference (richardson_ie needed 16)
+
+output:
+  n_points: 512               # stored log-time grid
+  t_min: 5.0e-4               # [s] default first stored time
+
+boundary:
+  h_convection: 10.0          # [W/m^2/K] outer sample surfaces (fixture + air)
+
+analytic_limit:               # settings for the "no layers, perfect contact, infinite sample" gate
+  sample_radius: 0.08         # [m]
+  sample_thickness: 0.08      # [m]

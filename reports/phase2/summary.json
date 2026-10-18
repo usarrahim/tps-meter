@@ -1,0 +1,319 @@
+{
+  "gate1_analytic": {
+    "passed": true,
+    "rows": [
+      {
+        "material": "PMMA",
+        "k": 0.19,
+        "max_err_tau_0.1_1_pct": 0.2626213591503612,
+        "max_err_tau_0.05_1_pct": 0.48607162998206555,
+        "max_err_all_pct": 4.191082901803211,
+        "M0_err_k_pct": -0.017730961404660572,
+        "M0_err_alpha_pct": -0.03477867740695473
+      },
+      {
+        "material": "Borosilikat",
+        "k": 1.2,
+        "max_err_tau_0.1_1_pct": 0.2631894677545654,
+        "max_err_tau_0.05_1_pct": 0.4833146284897172,
+        "max_err_all_pct": 1.724727412284377,
+        "M0_err_k_pct": -0.015875135389720185,
+        "M0_err_alpha_pct": -0.0558352396643369
+      },
+      {
+        "material": "Paslanmaz 304",
+        "k": 16.0,
+        "max_err_tau_0.1_1_pct": 0.26128932079538814,
+        "max_err_tau_0.05_1_pct": 0.48462183862636454,
+        "max_err_all_pct": 0.934001620298619,
+        "M0_err_k_pct": -0.016418242225557655,
+        "M0_err_alpha_pct": -0.04598185669432153
+      }
+    ]
+  },
+  "gate3_energy": {
+    "passed": true,
+    "rows": [
+      {
+        "case": "PMMA",
+        "E_in_J": 9.381203927381934,
+        "E_stored_J": 9.337532525254646,
+        "E_loss_J": 0.04367140219582828,
+        "rel_imbalance": -7.306159904757639e-12,
+        "rel_imbalance_trapezoid": -2.826000950828404e-07,
+        "frac_samples": 0.9899657236862202,
+        "frac_film": 0.005379074010819653,
+        "frac_lost": 0.004655202310266365
+      },
+      {
+        "case": "Borosilikat",
+        "E_in_J": 11.979051482931203,
+        "E_stored_J": 11.971665982681888,
+        "E_loss_J": 0.00738550026606472,
+        "rel_imbalance": -1.3982461336609488e-12,
+        "rel_imbalance_trapezoid": -2.828630924774803e-07,
+        "frac_samples": 0.9949863641789808,
+        "frac_film": 0.00439710117636566,
+        "frac_lost": 0.0006165346460517534
+      },
+      {
+        "case": "Paslanmaz 304",
+        "E_in_J": 9.947589282146206,
+        "E_stored_J": 9.94706087721458,
+        "E_loss_J": 0.0005284049355217899,
+        "rel_imbalance": -3.917116065209333e-13,
+        "rel_imbalance_trapezoid": -1.2308813970361706e-07,
+        "frac_samples": 0.995752758597952,
+        "frac_film": 0.004194122508953625,
+        "frac_lost": 5.311889348609956e-05
+      },
+      {
+        "case": "PMMA, düşük h_c, sabit güç",
+        "E_in_J": 9.319406166301562,
+        "E_stored_J": 9.275962608378983,
+        "E_loss_J": 0.0434435580330177,
+        "rel_imbalance": -1.1850385331889615e-11,
+        "rel_imbalance_trapezoid": -1.1850766548634056e-11,
+        "frac_samples": 0.989704299281583,
+        "frac_film": 0.005634077740799718,
+        "frac_lost": 0.004661622989467625
+      },
+      {
+        "case": "PMMA, ince numune 8 mm",
+        "E_in_J": 9.381896407904819,
+        "E_stored_J": 8.68018104825979,
+        "E_loss_J": 0.701715359668549,
+        "rel_imbalance": -2.5070111460702468e-12,
+        "rel_imbalance_trapezoid": -2.685449909844525e-07,
+        "frac_samples": 0.9196124988286344,
+        "frac_film": 0.005592882990142603,
+        "frac_lost": 0.07479461818373001
+      }
+    ]
+  },
+  "speed": {
+    "mean_s": 2.33838790000882,
+    "max_s": 2.606097800016869,
+    "passed_1s": false,
+    "est_60k_single_core_h": 38.973131666813664,
+    "est_60k_14_processes_h": 2.783795119058119,
+    "rows": [
+      {
+        "material": "PMMA",
+        "k": 0.19,
+        "t_end_s": 314.7452631578947,
+        "sps": 20,
+        "time_s": 2.369054499984486,
+        "n_unknowns": 47896,
+        "n_steps": 160,
+        "n_factorizations": 15
+      },
+      {
+        "material": "Borosilikat",
+        "k": 1.2,
+        "t_end_s": 68.26666666666667,
+        "sps": 100,
+        "time_s": 2.395919700007653,
+        "n_unknowns": 47896,
+        "n_steps": 161,
+        "n_factorizations": 15
+      },
+      {
+        "material": "Paslanmaz 304",
+        "k": 16.0,
+        "t_end_s": 9.472,
+        "sps": 1200,
+        "time_s": 2.2528509000258055,
+        "n_unknowns": 47896,
+        "n_steps": 156,
+        "n_factorizations": 14
+      },
+      {
+        "material": "Köpük benzeri (0,05)",
+        "k": 0.05,
+        "t_end_s": 819.1999999999999,
+        "sps": 20,
+        "time_s": 2.606097800016869,
+        "n_unknowns": 47896,
+        "n_steps": 177,
+        "n_factorizations": 16
+      },
+      {
+        "material": "Üst sınır (30)",
+        "k": 30.0,
+        "t_end_s": 4.778666666666667,
+        "sps": 1200,
+        "time_s": 2.0680166000092868,
+        "n_unknowns": 47896,
+        "n_steps": 144,
+        "n_factorizations": 13
+      }
+    ]
+  },
+  "physics_layers": {
+    "rows": [
+      {
+        "case": "film var, mükemmel temas",
+        "offset_at_tau1_K": 0.17435538372080028,
+        "slope_dev_1pct_until_tau": 0.13356817785599495,
+        "slope_dev_at_tau_0.55_pct": 0.6700017114268052
+      },
+      {
+        "case": "film var, h_c = 5000",
+        "offset_at_tau1_K": 0.36102601071851215,
+        "slope_dev_1pct_until_tau": 0.2705262549756703,
+        "slope_dev_at_tau_0.55_pct": 0.7915546556729797
+      },
+      {
+        "case": "film var, h_c = 1000",
+        "offset_at_tau1_K": 0.9376559774011515,
+        "slope_dev_1pct_until_tau": 0.7752766452805824,
+        "slope_dev_at_tau_0.55_pct": 1.2428541278098064
+      }
+    ]
+  },
+  "physics_thickness": {
+    "rows": [
+      {
+        "material": "PMMA",
+        "thickness_mm": 8.0,
+        "onset_tau_0.1pct": 0.5929713231852466,
+        "dev_at_tau1_pct": 2.626043899567798,
+        "M0_k_err_pct": -6.1672999946585705,
+        "M0_alpha_err_pct": -54.66509071256262,
+        "depth_over_thickness_tau1": 1.6
+      },
+      {
+        "material": "PMMA",
+        "thickness_mm": 12.0,
+        "onset_tau_0.1pct": 0.9246024792472385,
+        "dev_at_tau1_pct": 0.2022647489347662,
+        "M0_k_err_pct": 0.8940508396940716,
+        "M0_alpha_err_pct": -11.752299176951041,
+        "depth_over_thickness_tau1": 1.0666666666666667
+      },
+      {
+        "material": "PMMA",
+        "thickness_mm": 16.0,
+        "onset_tau_0.1pct": NaN,
+        "dev_at_tau1_pct": 0.008462601956549243,
+        "M0_k_err_pct": -0.035730666902311636,
+        "M0_alpha_err_pct": -1.2396796606007343,
+        "depth_over_thickness_tau1": 0.8
+      },
+      {
+        "material": "PMMA",
+        "thickness_mm": 20.0,
+        "onset_tau_0.1pct": NaN,
+        "dev_at_tau1_pct": 0.0005433383468922415,
+        "M0_k_err_pct": -0.07308332200135492,
+        "M0_alpha_err_pct": -0.8519831940624001,
+        "depth_over_thickness_tau1": 0.64
+      },
+      {
+        "material": "PMMA",
+        "thickness_mm": 25.0,
+        "onset_tau_0.1pct": NaN,
+        "dev_at_tau1_pct": -0.00018179145626628923,
+        "M0_k_err_pct": -0.07397544425695735,
+        "M0_alpha_err_pct": -0.8441521348316328,
+        "depth_over_thickness_tau1": 0.512
+      },
+      {
+        "material": "Borosilikat",
+        "thickness_mm": 8.0,
+        "onset_tau_0.1pct": 0.594139884200852,
+        "dev_at_tau1_pct": 3.008845007864669,
+        "M0_k_err_pct": -11.953180294013299,
+        "M0_alpha_err_pct": -58.53494410742665,
+        "depth_over_thickness_tau1": 1.6
+      },
+      {
+        "material": "Borosilikat",
+        "thickness_mm": 12.0,
+        "onset_tau_0.1pct": 0.9222042773791355,
+        "dev_at_tau1_pct": 0.21984698685439952,
+        "M0_k_err_pct": 0.5301119162588019,
+        "M0_alpha_err_pct": -14.116472970280158,
+        "depth_over_thickness_tau1": 1.0666666666666667
+      },
+      {
+        "material": "Borosilikat",
+        "thickness_mm": 16.0,
+        "onset_tau_0.1pct": NaN,
+        "dev_at_tau1_pct": 0.008860590954662406,
+        "M0_k_err_pct": -0.7654116389420373,
+        "M0_alpha_err_pct": -0.14648433362518531,
+        "depth_over_thickness_tau1": 0.8
+      },
+      {
+        "material": "Borosilikat",
+        "thickness_mm": 20.0,
+        "onset_tau_0.1pct": NaN,
+        "dev_at_tau1_pct": 0.0005176328500944294,
+        "M0_k_err_pct": -0.8130671113656174,
+        "M0_alpha_err_pct": 0.33960293731423175,
+        "depth_over_thickness_tau1": 0.64
+      },
+      {
+        "material": "Borosilikat",
+        "thickness_mm": 25.0,
+        "onset_tau_0.1pct": NaN,
+        "dev_at_tau1_pct": -0.00014737935259967472,
+        "M0_k_err_pct": -0.8138598739886094,
+        "M0_alpha_err_pct": 0.34682328766408865,
+        "depth_over_thickness_tau1": 0.512
+      }
+    ]
+  },
+  "physics_hc": {
+    "apparent_k_increases_with_hc": true
+  },
+  "gate2_convergence": {
+    "passed": true,
+    "rows": [
+      {
+        "material": "PMMA",
+        "max_change_tau_0.1_1_pct": 0.09843483502829375,
+        "max_change_all_pct": 0.20292203745354565,
+        "time_only_change_tau_0.1_1_pct": 0.0023671918335521624,
+        "offset_part_K": -0.0004490193011561295,
+        "shape_change_after_offset_pct": 0.007318088833689824,
+        "M0_k_change_pct": 0.018715081729547833,
+        "M0_alpha_change_pct": 0.019396853807274184,
+        "time_base_s": 3.3255821999919135,
+        "time_refined_s": 25.773214700020617,
+        "n_unknowns_base": 47896,
+        "n_unknowns_refined": 179122
+      },
+      {
+        "material": "Borosilikat",
+        "max_change_tau_0.1_1_pct": 0.0994413210588796,
+        "max_change_all_pct": 0.13443865242787068,
+        "time_only_change_tau_0.1_1_pct": 0.0020061058920384234,
+        "offset_part_K": -0.0007889645362787939,
+        "shape_change_after_offset_pct": 0.006101107075492531,
+        "M0_k_change_pct": 0.015166491627272016,
+        "M0_alpha_change_pct": 0.0376628777959187,
+        "time_base_s": 2.793238599988399,
+        "time_refined_s": 22.20563269997365,
+        "n_unknowns_base": 47896,
+        "n_unknowns_refined": 179122
+      },
+      {
+        "material": "Paslanmaz 304",
+        "max_change_tau_0.1_1_pct": 0.09277064509507493,
+        "max_change_all_pct": 0.09468329740888182,
+        "time_only_change_tau_0.1_1_pct": 0.0022684896979541236,
+        "offset_part_K": -0.0022933806577003614,
+        "shape_change_after_offset_pct": 0.0019735996043654985,
+        "M0_k_change_pct": 0.01320336562611324,
+        "M0_alpha_change_pct": 0.041773303513914506,
+        "time_base_s": 2.331605200015474,
+        "time_refined_s": 21.2403270000068,
+        "n_unknowns_base": 47896,
+        "n_unknowns_refined": 179122
+      }
+    ]
+  }
+}

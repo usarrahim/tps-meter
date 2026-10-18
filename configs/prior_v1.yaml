@@ -1,0 +1,30 @@
+# Simulation parameter prior v1. Parameters are sampled independently. SI units.
+units: SI
+
+k:                 {dist: loguniform, low: 0.05,    high: 30.0}      # [W/m/K]
+rho_cp:            {dist: uniform,    low: 0.8e6,   high: 4.5e6}     # [J/m^3/K]; alpha = k / rho_cp
+h_c_bottom:        {dist: loguniform, low: 500.0,   high: 50000.0}   # [W/m^2/K]
+h_c_top:           {dist: loguniform, low: 500.0,   high: 50000.0}   # [W/m^2/K]
+layer_thickness_rel: {dist: uniform,  low: 0.8,     high: 1.2}       # x nominal, independent per film layer
+k_polyimide:       {dist: uniform,    low: 0.12,    high: 0.25}      # [W/m/K]
+k_adhesive:        {dist: uniform,    low: 0.12,    high: 0.25}      # [W/m/K]
+sample_radius:     {dist: uniform,    low: 20.0e-3, high: 30.0e-3}   # [m], both samples
+sample_thickness:  {dist: uniform,    low: 8.0e-3,  high: 25.0e-3}   # [m], both samples
+# Calibration errors: the TRUE value differs from what the analysis assumes. Applied in the
+# measurement chain (Phase 4); stored with every sample.
+alpha_R_calib_rel: {dist: normal,     mean: 0.0,    std: 0.01}       # +-1 %
+radius_calib_rel:  {dist: normal,     mean: 0.0,    std: 0.005}      # +-0.5 %
+
+auto_setup:
+  # Device firmware logic (plan 10.3): a short probe pulse gives a rough k, alpha estimate.
+  probe_error_rel: 0.30       # probe k and alpha each off by U(-30 %, +30 %), independently
+  target_dT: 2.5              # [K] at tau = 1 (ideal TPS formula with the probe k)
+  tau_max: 1.0                # duration never exceeds tau = 1 for the probe alpha
+  max_depth_frac: 0.90        # probing depth 2 sqrt(alpha t) <= 0.9 min(thickness, radius - a)
+  # Sample rate: fastest allowed rate within device.yaml max_samples_per_record (long -> 20 SPS, short -> 1200 SPS)
+
+# Faulty measurements (test_faulty split). Each sample gets exactly one fault.
+faults:
+  air_gap_low_hc:   {weight: 1.0, h_c: {dist: loguniform, low: 20.0, high: 300.0}, sides: [bottom, top, both]}
+  thin_sample:      {weight: 1.0, true_thickness: {dist: uniform, low: 2.0e-3, high: 6.0e-3}}  # user enters the nominal prior thickness
+  drift_jump:       {weight: 1.0, jump_K: {dist: uniform, low: 0.005, high: 0.05}}  # step added in the measurement chain (Phase 4)

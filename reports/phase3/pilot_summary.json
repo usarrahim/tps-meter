@@ -1,0 +1,41 @@
+{
+  "n": 1000,
+  "n_ok": 1000,
+  "n_failed": 0,
+  "wall_time_s": 692.750698399992,
+  "workers": 10,
+  "sim_time_mean_s": 6.894459232400346,
+  "sim_time_p95_s": 8.423073269997257,
+  "effective_speedup": 9.952294885193329,
+  "full_run_samples": {
+    "train": 50000,
+    "val": 5000,
+    "test": 5000,
+    "test_interp": 2000,
+    "test_faulty": 2000
+  },
+  "full_run_estimate_h": 12.315567971555412,
+  "dTmax": {
+    "median": 2.5598208904266357,
+    "p5": 1.5764828860759734,
+    "p95": 5.238590359687804,
+    "frac_below_0.5K": 0.0,
+    "frac_above_8K": 0.006
+  },
+  "power_clipped_low": 0.019,
+  "power_clipped_high": 0.207,
+  "t_end_limited_by_depth": 0.426,
+  "sps_counts": {
+    "20": 307,
+    "50": 117,
+    "100": 227,
+    "400": 159,
+    "1200": 190
+  },
+  "current_range_counts": {
+    "L": 489,
+    "H": 511
+  },
+  "energy_imbalance_max": 7.468826553145646e-11,
+  "frac_lost_max": 0.06611698802501773
+}

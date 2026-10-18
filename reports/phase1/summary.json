@@ -1,0 +1,37 @@
+{
+  "config": {
+    "units": "SI",
+    "dtau": {
+      "sigma_min": 1e-06,
+      "table_tau_max": 20.0,
+      "table_points": 8193
+    },
+    "m0": {
+      "tau2_window": [
+        0.3,
+        1.0
+      ],
+      "alpha_bounds": [
+        1e-09,
+        0.0001
+      ],
+      "coarse_points": 121,
+      "n_bins": 1000,
+      "n_power_steps": 300,
+      "min_window_bins": 20,
+      "max_iterations": 20
+    }
+  },
+  "dtau": {
+    "max_ref_err_pct": 0.0006776889770021555,
+    "max_table_abs_err": 2.5635049638594865e-13
+  },
+  "m0_gate": {
+    "passed": true,
+    "max_abs_err_k_pct": 0.0030156566477756996,
+    "max_abs_err_alpha_pct": 0.018779855118411515,
+    "naive_max_abs_err_k_pct": 0.7309586430480297,
+    "naive_max_abs_err_alpha_pct": 2.157518905790301,
+    "max_fit_time_s": 0.06697410000197124
+  }
+}

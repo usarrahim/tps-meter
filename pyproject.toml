@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tpslib"
+version = "0.0.1"
+description = "TPS (hot-disk) thermal conductivity simulator, synthetic data pipeline and k/alpha estimator"
+readme = "README.md"
+# 3.11 locally (PROJECT_RULES.md); Colab currently ships 3.12, so both must work.
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "scipy",
+    "h5py",
+    "pyyaml",
+    "torch",
+    "matplotlib",
+    "pandas",
+    "tqdm",
+    "lightgbm",
+    "onnx",
+    "onnxruntime",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

@@ -1,0 +1,42 @@
+# Compact M2 for the device (~62k parameters, plan 9.11). Same data and training as train_m2.yaml.
+name: m2c
+data:
+  dataset: configs/dataset_v1.yaml   # files under <data root>/<output_dir>
+  train: train.h5
+  val: val.h5
+  exclude_k_band: null        # [1.5, 2.5] for the ablation run (applied to train AND val)
+  max_contact_asymmetry: null # e.g. 10: keep samples with h_c,max/h_c,min <= 10 (train AND val); larger = fault
+  max_train: null             # cap on training samples (data-size / learning-curve study)
+  normalizer_samples: 5000    # train samples used for the normalisation statistics
+
+model:
+  name: resnet1d
+  in_channels: 3              # theta_rel, dtheta_dlnt_rel, log_count (features.yaml)
+  n_scalars: 7
+  channels: [16, 32, 48, 48]
+  kernel_size: 5
+  activation: gelu
+  head_hidden: 64
+  targets: [ln_k, ln_alpha, ln_G_c]
+  logvar_bounds: [-14.0, 4.0]  # in normalised target units
+
+loss:
+  type: beta_nll
+  beta: 0.5
+  weights: {ln_k: 1.0, ln_alpha: 0.5, ln_G_c: 0.2}
+
+optim:
+  name: adamw
+  lr: 1.0e-3
+  weight_decay: 1.0e-4
+  schedule: cosine
+  warmup_epochs: 2
+  grad_clip: 1.0
+
+train:
+  batch_size: 256
+  max_epochs: 60
+  early_stopping: {metric: val_nll_ln_k, patience: 8, min_epochs: 30}  # no stopping before epoch 30
+  amp: cuda_only
+  num_workers: 8
+  seeds: [1, 2]

@@ -1,0 +1,14 @@
+# Dataset v1: splits, sizes and seeds. Each split is generated separately with its own seed.
+version: v1
+prior: configs/prior_v1.yaml
+output_dir: synthetic/v1       # relative to data root (TPS_DATA_ROOT or ./data)
+shard_size: 250                # resume granularity (~1 min of work on 14 processes)
+
+pilot: {n: 1000, seed: 999}
+
+splits:
+  train:       {n: 50000, seed: 1001}
+  val:         {n: 5000,  seed: 2002}                        # model selection
+  test:        {n: 5000,  seed: 3003}                        # reported once at the end
+  test_interp: {n: 2000,  seed: 4004, k_band: [1.5, 2.5]}    # band removed from train/val in ablation
+  test_faulty: {n: 2000,  seed: 5005, faults: [air_gap_low_hc, thin_sample, drift_jump]}

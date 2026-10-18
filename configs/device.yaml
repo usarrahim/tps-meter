@@ -1,0 +1,50 @@
+# Measurement device. SI units.
+units: SI
+
+power:
+  min: 0.008                  # [W]
+  max: 1.0                    # [W]
+
+# Two constant-current ranges (plan section 5.3). With R0 = 4 ohm: L 8-140 mW, H 130 mW-1 W.
+# The auto-setup uses L whenever the required current fits in it.
+current_ranges:
+  L: {I_min: 0.045, I_max: 0.188, R_ref: 20.0}   # [A], [A], [ohm]
+  H: {I_min: 0.180, I_max: 0.500, R_ref: 5.0}
+
+sample_rate:
+  min: 20                     # [samples/s]
+  max: 1200                   # [samples/s]
+  allowed: [20, 50, 100, 400, 1200]
+  max_samples_per_record: 12000  # PDF 7.4 memory budget (1200 SPS x 10 s); fastest rate under this cap is used
+
+target_temperature_rise: 2.5  # [K] at tau = 1 (auto-setup rule)
+
+# Measurement-chain model (Phase 4). Applied to clean simulated curves at TRAINING time, in the same
+# raw format the device produces; real and synthetic records then share one preprocessing path.
+# PLACEHOLDER values from the ADS1263/ADS1262 datasheets and the project plan (sections 5, 7.3, 9.4);
+# replace with statistics from an idle device recording (plan 9.7, test T2/T3).
+noise:
+  adc_bits: 32
+  # ADC1 input-referred white noise, Sinc4, gain 1: 0.23 uV rms at 20 SPS, ~1.0 at 400, ~1.7 at 1200
+  # (datasheet), i.e. ~ sqrt(rate). Temperature noise = V_n / (I R0 alpha_R).
+  white_uV_at_20sps: 0.23
+  white_rate_exponent: 0.5
+  noise_scale: [1.0, 2.0]       # real board up to 2x datasheet (plan T2 acceptance limit); uniform
+  flicker_corner_hz: [0.0, 1.0] # 1/f corner, uniform (PSD = white * (1 + f_c / f))
+  adc2_current_noise_rel: 1.0e-5  # ADC2 current reading noise (10 SPS)
+  adc2_rate: 10.0               # [samples/s]
+drift:
+  linear_max: 2.0e-4            # [K/s] ambient drift, uniform +-0.2 mK/s (plan 9.4)
+  quadratic_frac: 0.1           # |quadratic part| at t_end <= frac * |linear part at t_end|
+  slope_estimate_std: 5.0e-6    # [K/s] error of the 30 s pre-measurement slope estimate
+timing:
+  t_c_max: 5.0e-3               # [s] heating start offset, uniform +-
+  clock_ppm_std: 20.0           # crystal time base (spec <= 50 ppm)
+calibration:
+  power_error_rel: 0.005        # +-0.5 % absolute current/power error, uniform
+  R0_rel_std: 2.0e-5            # R0 from the pre-measurement (different current, internal reference)
+  R_ref_tolerance: 1.0e-3       # cancels in R/R0 (ratiometric); modelled to show it
+electronic_drift:               # apparent dT from R_ref self-heating (dummy-load test T3); PLACEHOLDER
+  amp_K_per_W: 0.01             # 10 mK at 1 W (T3 limit is 20 mK)
+  tau_s: 20.0
+  residual_frac: 0.5            # correction curve error +-50 % (plan 9.4)

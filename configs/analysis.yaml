@@ -1,0 +1,16 @@
+# Analytic D(tau) and the classic TPS fit (M0). SI units.
+units: SI
+
+dtau:
+  sigma_min: 1.0e-6     # lower integration limit; D diverges logarithmically at 0 (see DECISIONS.md)
+  table_tau_max: 20.0   # table covers [sigma_min, table_tau_max]
+  table_points: 8193    # points on the ln(sigma) grid (odd, for Simpson)
+
+m0:
+  tau2_window: [0.3, 1.0]       # fit window in tau^2 (PDF section 2, Zhang et al.)
+  alpha_bounds: [1.0e-9, 1.0e-4] # [m^2/s] search range for alpha
+  coarse_points: 121            # log-spaced coarse alpha scan
+  n_bins: 1000                  # log-time bins of the record before fitting
+  n_power_steps: 300            # piecewise-constant power history for the Duhamel sum
+  min_window_bins: 20
+  max_iterations: 20
