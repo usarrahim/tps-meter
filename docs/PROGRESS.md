@@ -5,10 +5,10 @@
 | 0 — İskelet ve ortam | Onaylandı | `pytest` hatasız ✔ | [reports/phase0.md](../reports/phase0.md) |
 | 1 — Analitik çözüm ve M0 | Onaylandı | D(τ) %0,0007; M0 k ≤ %0,003, α ≤ %0,019 (20 k, sabit akım dahil) ✔ | [reports/phase1.md](../reports/phase1.md) |
 | 2 — Simülatör ve doğrulama | Onaylandı (Faz 3'te şema TR-BDF2'ye geçti, kapılar yeniden geçti) | Analitik %0,26 ✔, yakınsama %0,099 ✔, enerji ✔, fizik ✔, hız 2,1–2,6 s ✘ (bilinçli) | [reports/phase2.md](../reports/phase2.md) |
-| 3 — Prior ve veri üretimi | Pilot tamam; **tam üretim Colab'da sürüyor** (v5e-1, 24 çekirdek, ~5,3 sa) | Pilot 1.000/1.000 ✔ | [reports/phase3.md](../reports/phase3.md) |
+| 3 — Prior ve veri üretimi | Tamamlandı (Colab) | 64.000/64.000, 0 hata ✔ | [reports/phase3.md](../reports/phase3.md) |
 | 4 — Ölçüm etkileri ve özellikler | Onaylandı | M0 + ölçüm etkileri k ≤ %0,70 ✔; normalizasyon ✔ | [reports/phase4.md](../reports/phase4.md) |
-| 5 — M2 eğitimi | Kod hazır, pilot denemesi tamam; **tam eğitim veriyi bekliyor** | Pilot: k medyan %1,8, cov95 %96 (yalnızca kod kontrolü) | [reports/phase5.md](../reports/phase5.md) |
-| 6 — Değerlendirme ve dışa aktarma | Başlamadı | | |
+| 5 — M2 eğitimi | Tamamlandı (Colab): 5 üyeli `v1sym` + ablasyon + kompakt | Val k medyan %1,05–1,12, %95'lik %6,1–6,4 ✔ | [reports/phase5.md](../reports/phase5.md) |
+| 6 — Değerlendirme ve dışa aktarma | Tamamlandı, **onay bekliyor** | k<5: hedef ✔; 5–30: ✘ (%95'lik %10); ONNX ✔; arıza tespiti kısmen | [reports/phase6.md](../reports/phase6.md) |
 
 ## Faz 0 — 2026-10-17
 
@@ -63,3 +63,13 @@
 - 10k modeli ve teşhis: kuyruk yüksek k ve aşırı temas asimetrisinden geliyor. Kullanıcı kararı: asimetri > 10 arıza; topluluk `v1sym` (5 tohum, asimetri ≤ 10) Colab'da eğitiliyor. Erken durdurma 30. epoktan önce devreye girmiyor.
 - Faz 6 kodu: `scripts/evaluate.py` (k bantları, M0 karşılaştırması, kalibrasyon, interpolasyon/ablasyon, arıza tespiti, kompakt model, ONNX + doğrulama, otomatik model kartı, paket zip), `eval/m0_batch.py`, `eval/trust.py`, `models/export.py`, `configs/train_m2_compact.yaml` (61.910 parametre). Pilot verisiyle kuru çalıştırma tamam; ONNX ile PyTorch farkı 2e-6.
 - Testler: 140 passed.
+
+## Faz 6 — 2026-10-19
+
+- Kilitli test seti (gerçekçi temas, n = 3.715):
+  - k medyan / %95'lik: 0,05–0,5 → %0,83 / %2,60 · 0,5–5 → %0,89 / %3,17 · 5–30 → %2,07 / %10,36.
+  - M0 tümünde %1,71 / %13,47.
+- Kalibrasyon: ln k %95 kapsama %97. Ablasyon modeli görmediği bantta %0,92 / %2,91.
+- Arıza tespiti: ince numune %98, kayma sıçraması %85, hava boşluğu %53. G_c aralık kontrolü ve yeniden simülasyon (M0+) eksik.
+- Kompakt model 2 × 61.910 parametre, toplulukla fark %0,27. ONNX doğrulandı (2e-6).
+- Model kartı: `models/m2_v1/MODEL_CARD.md`. ONNX ve ağırlıklar Drive'da (git dışı).

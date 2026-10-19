@@ -91,3 +91,13 @@ M0+ (simülatörle tam fizik ters çözümü), güven sistemi (ilerleme derinli�
 - **Güven kontrolleri:** Topluluk farkı, toplam belirsizlik, M0–M2 farkı, M0 artığı ve ΔT aralığı. Eşikler **val**'ın %99'luk dilimlerinden; test setleri eşik seçiminde hiç kullanılmıyor. Yeniden simülasyon kontrolü (M0+) bu sürümde yok.
 - **ONNX:** Topluluk normalizasyonlarıyla birlikte tek bir graf; girdi ham özellikler, çıktı ln birimlerinde ortalama ve std. PyTorch ile karşılaştırması otomatik yapılıyor.
 - **Kompakt model:** (16, 32, 48, 48) kanal, çekirdek 5, baş 64 → 61.910 parametre; plan 9.11'deki gibi 2 üye.
+
+## 2026-10-19 — Faz 6 sonuçlarına göre
+
+- **Base model M2 v1 donduruldu:** `v1sym` 5 üye + kompakt `v1c` 2 üye. Test setleri kullanıldı; bu sürüm için başka model seçimi yapılmayacak.
+- **Güven sistemi v1 yetersiz** (hava boşluğu %53, asimetri %4). Gerçek ölçümden önce eklenecek:
+  - G_c ve k aralık kontrolleri
+  - M0+ yeniden simülasyon artığı
+  - α belirsizlik ölçeğinin val'dan kalibrasyonu
+
+  Bu iyileştirmeler modeli yeniden eğitmeyi gerektirmiyor; yeni eşikler val'dan seçilecek ve test setleri yalnızca bir kez, son raporda yeniden kullanılacak.
