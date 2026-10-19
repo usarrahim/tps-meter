@@ -79,6 +79,8 @@ After Phase 6, new checks were added on the outputs of the frozen M2 v1. Code: `
 | ln α | 0.589 | 89.3% → 70.7% | 99.3% → 93.1% |
 | ln G_c | 0.974 | 69.1% → 67.8% | 96.4% → 96.0% |
 
+Figures: `phase6_trust/faulty_detection.png` (v1 vs v2) and `phase6_trust/calibration.png` (raw vs scaled coverage).
+
 With the scale all three targets are close to nominal coverage on test; the ln α interval shrinks by 41%. The ONNX graph is unchanged; the scale is in `trust_v2.json` and is applied as `std × scale` on the user side.
 
 ## Findings carried over from Phase 5

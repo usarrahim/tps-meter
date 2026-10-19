@@ -92,4 +92,4 @@
 - Flagged, v1 → v2: air gap 52.8% → 74.3%, thin sample 97.9% → 99.3%, drift jump 84.9% → 92.1%, asymmetry > 10 4.2% → 5.2%; false alarm 4.7% → 5.7% on test (5.0% on val).
 - Variance scale from val: ln k × 0.898, ln α × 0.589, ln G_c × 0.974; test coverage after scaling 69/95%, 71/93%, 68/96%.
 - Unflagged faulty measurements: 229, median k error −28%. Asymmetric contact still needs M0+.
-- Phase 6 figures on Drive (`tps-meter/reports/phase6/`, `phase6_trust/`) are English; the copies in git still have Turkish labels until they are brought into the repository.
+- Phase 6 figures (English) copied from Drive into `reports/phase6/`; trust v2 figures into `reports/phase6_trust/`.
