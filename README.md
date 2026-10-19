@@ -1,58 +1,60 @@
-# tps-meter — Yapay zekâ destekli hot-disk (TPS) ısıl iletkenlik ölçümü
+# tps-meter — AI-assisted hot-disk (TPS) thermal conductivity measurement
 
-İTÜ EHB bitirme projesi: düşük maliyetli, USB ile çalışan, yapay zekâ destekli bir **hot-disk (Transient Plane Source)** ısıl iletkenlik ölçüm cihazı.
-Bu depo cihazın **analiz yazılımını** içerir:
-- sensör + numune sisteminin fizik simülatörü,
-- sentetik veri üretim hattı,
-- klasik TPS çözümü (M0),
-- ısıl iletkenlik (k), ısıl yayınım (α) ve temas iletkenliğini belirsizlikleriyle tahmin eden sinir ağı (M2).
+ITU EHB graduation project: a low-cost, USB-powered, AI-assisted **hot-disk (Transient Plane Source)** thermal conductivity meter.
+This repository holds the device's **analysis software**:
+- a physics simulator of the sensor + sample system,
+- a synthetic data pipeline,
+- the classic TPS solution (M0),
+- a neural network (M2) that estimates thermal conductivity (k), thermal diffusivity (α) and contact conductance, each with an uncertainty.
 
-> **Gizlilik.** Bu depo tescilli yazılımdır; bkz. [LICENSE](LICENSE). Eğitilmiş model ağırlıkları, ONNX dosyaları, normalizasyon istatistikleri, üretilen veri ve ölçüm verileri **depoya dahil değildir**. Bunlar ayrı, özel bir depolamada tutulur.
+> **Confidentiality.** This repository is proprietary software; see [LICENSE](LICENSE). Trained model weights, ONNX files, normalisation statistics, generated data and measurement data are **not included**. They are kept in separate private storage.
 
-## Durum
+## Status
 
-| Aşama | Durum | Rapor |
+| Stage | Status | Report |
 |---|---|---|
-| Faz 0–1: altyapı, analitik D(τ), klasik TPS (M0) | tamamlandı | [phase0](reports/phase0.md), [phase1](reports/phase1.md) |
-| Faz 2: r–z sonlu hacim simülatörü ve doğrulama | tamamlandı | [phase2](reports/phase2.md) |
-| Faz 3: prior, otomatik ayar kuralı, 64.000 sentetik eğri | tamamlandı | [phase3](reports/phase3.md) |
-| Faz 4: ölçüm zinciri, ortak ön işleme, özellikler | tamamlandı | [phase4](reports/phase4.md) |
-| Faz 5–6: M2 topluluğu, test değerlendirmesi, ONNX | tamamlandı (base model M2 v1) | [phase5](reports/phase5.md), [phase6](reports/phase6.md), [model kartı](models/m2_v1/MODEL_CARD.md) |
-| Gerçek cihaz verisiyle kalibrasyon ve doğrulama | sırada | — |
+| Phases 0–1: infrastructure, analytic D(τ), classic TPS (M0) | done | [phase0](reports/phase0.md), [phase1](reports/phase1.md) |
+| Phase 2: r–z finite-volume simulator and validation | done | [phase2](reports/phase2.md) |
+| Phase 3: prior, auto-setup rule, 64,000 synthetic curves | done | [phase3](reports/phase3.md) |
+| Phase 4: measurement chain, shared preprocessing, features | done | [phase4](reports/phase4.md) |
+| Phases 5–6: M2 ensemble, test evaluation, ONNX | done (base model M2 v1) | [phase5](reports/phase5.md), [phase6](reports/phase6.md), [model card](models/m2_v1/MODEL_CARD.md) |
+| Calibration and validation with real device data | next | — |
 
-**M2 v1 test sonucu** (yalnızca simülasyon; k medyan / %95'lik hata):
+Full write-up of the work so far: [reports/REPORT_v1.md](reports/REPORT_v1.md).
 
-| k aralığı | M2 v1 | M0 (klasik) |
+**M2 v1 test result** (simulation only; k median / p95 error):
+
+| k range | M2 v1 | M0 (classic) |
 |---|---|---|
-| 0,05–0,5 W/m·K | %0,83 / %2,6 | %1,21 / %3,7 |
-| 0,5–5 W/m·K | %0,89 / %3,2 | %1,41 / %6,4 |
-| 5–30 W/m·K | %2,07 / %10,4 | %5,03 / %23,9 |
+| 0.05–0.5 W/m·K | 0.83% / 2.6% | 1.21% / 3.7% |
+| 0.5–5 W/m·K | 0.89% / 3.2% | 1.41% / 6.4% |
+| 5–30 W/m·K | 2.07% / 10.4% | 5.03% / 23.9% |
 
-Gerçek cihaz doğruluğu henüz ölçülmedi.
+Accuracy on the real device has not been measured yet.
 
-## Depo düzeni
+## Repository layout
 
 ```
-configs/        tüm ayarlar (SI birimleri): sensör, cihaz, simülasyon sayısalları, prior, veri seti, eğitim
+configs/        all settings (SI units): sensor, device, simulation numerics, prior, dataset, training
 src/tpslib/
-  dtau.py, fit_tps.py        analitik D(τ) ve klasik TPS uydurması (M0)
-  sim/                       r–z sonlu hacim simülatörü (ağ, çözücü, sensör modeli, analitik referans)
-  measurement/               ölçüm zinciri modeli ve gerçek/sentetik için ORTAK ön işleme
-  data/                      prior + otomatik ayar, paralel veri üretimi, özellikler, PyTorch dataset
-  models/                    1B ResNet (M2), β-NLL kaybı, ONNX dışa aktarma
-  train/                     eğitim döngüsü (devam ettirilebilir)
-  eval/                      metrikler, tahmin, M0 toplu çalıştırma, güven kontrolleri, grafik stili
-scripts/        komut satırı girişleri (doğrulama, üretim, eğitim, teşhis, değerlendirme)
-tests/          pytest (fizik fonksiyonlarının her birinin testi var)
-notebooks/      Google Colab çalıştırıcısı
-reports/        faz raporları ve grafikler
-docs/           ilerleme, tasarım kararları, Colab kılavuzu, proje özeti
-models/         yalnızca model kartları (ağırlıklar depoda değil)
+  dtau.py, fit_tps.py        analytic D(τ) and the classic TPS fit (M0)
+  sim/                       r–z finite-volume simulator (mesh, solver, sensor model, analytic reference)
+  measurement/               measurement-chain model and the preprocessing SHARED by real and synthetic data
+  data/                      prior + auto-setup, parallel data generation, features, PyTorch dataset
+  models/                    1D ResNet (M2), β-NLL loss, ONNX export
+  train/                     training loop (resumable)
+  eval/                      metrics, prediction, batch M0, trust checks, plot style
+scripts/        command-line entry points (validation, generation, training, diagnosis, evaluation)
+tests/          pytest (every physics function has a test)
+notebooks/      Google Colab runner
+reports/        phase reports and figures
+docs/           progress log, design decisions, Colab guide, project brief
+models/         model cards only (weights are not in the repository)
 ```
 
-## Kurulum (Windows, PowerShell)
+## Setup (Windows, PowerShell)
 
-Python 3.11 gerekir.
+Requires Python 3.11.
 
 ```powershell
 py -V:3.11 -m venv .venv
@@ -60,32 +62,32 @@ py -V:3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
 ```
 
-Ortamı etkinleştirme ve testler:
+Activate the environment and run the tests:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
 python -m pytest -q
 ```
 
-## Sık kullanılan komutlar
+## Common commands
 
-| İş | Komut |
+| Task | Command |
 |---|---|
-| Simülatör doğrulama kapıları | `python scripts/validate_sim.py` |
-| Veri üretimi (devam ettirilebilir) | `python scripts/generate_dataset.py --splits train val test test_interp test_faulty` |
-| M2 eğitimi (5 tohum) | `python scripts/train_m2.py --seeds 1 2 3 4 5 --tag v1sym --max-asym 10` |
-| Hata teşhisi (val) | `python scripts/diagnose.py --run v1sym_m2_seed1` |
-| Son değerlendirme + ONNX | `python scripts/evaluate.py --ensemble-tag v1sym ...` |
+| Simulator validation gates | `python scripts/validate_sim.py` |
+| Data generation (resumable) | `python scripts/generate_dataset.py --splits train val test test_interp test_faulty` |
+| M2 training (5 seeds) | `python scripts/train_m2.py --seeds 1 2 3 4 5 --tag v1sym --max-asym 10` |
+| Error diagnosis (val) | `python scripts/diagnose.py --run v1sym_m2_seed1` |
+| Final evaluation + ONNX | `python scripts/evaluate.py --ensemble-tag v1sym ...` |
 
-Uzun işler Google Colab'da çalıştırılır: [docs/COLAB.md](docs/COLAB.md), [notebooks/colab_run.ipynb](notebooks/colab_run.ipynb). Veri ve eğitim çıktıları için `TPS_DATA_ROOT` ve `TPS_RUNS_ROOT` ortam değişkenleri kullanılır.
+Long jobs run on Google Colab: [docs/COLAB.md](docs/COLAB.md), [notebooks/colab_run.ipynb](notebooks/colab_run.ipynb). Data and training outputs are located through the `TPS_DATA_ROOT` and `TPS_RUNS_ROOT` environment variables.
 
-## Belgeler
+## Documents
 
-- [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md): faz faz iş tanımı
-- [docs/PROGRESS.md](docs/PROGRESS.md): ilerleme günlüğü
-- [docs/DECISIONS.md](docs/DECISIONS.md): tasarım kararları ve gerekçeleri
-- [docs/PROJECT_RULES.md](docs/PROJECT_RULES.md): proje kuralları ve fizik sabitleri (tek doğruluk kaynağı: `configs/sensor.yaml`)
+- [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md): phase-by-phase work definition
+- [docs/PROGRESS.md](docs/PROGRESS.md): progress log
+- [docs/DECISIONS.md](docs/DECISIONS.md): design decisions and their rationale
+- [docs/PROJECT_RULES.md](docs/PROJECT_RULES.md): project rules and physical constants (single source of truth: `configs/sensor.yaml`)
 
-## Lisans
+## License
 
-Tescilli; tüm hakları saklıdır. Bkz. [LICENSE](LICENSE).
+Proprietary; all rights reserved. See [LICENSE](LICENSE).

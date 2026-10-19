@@ -1,47 +1,47 @@
-# Faz 5 raporu (ara) — M2 eğitim kodu ve pilot denemesi (2026-10-18)
+# Phase 5 report (interim) — M2 training code and pilot trial (2026-10-18)
 
-> Bu rapor **kodun hazır olduğunu** gösterir. Sayılar 1.000 örneklik pilot verisinden gelir (900 train / 100 val). Model başarısının ölçüsü değildir. Asıl eğitim, Colab'daki 64 bin örneklik üretim bitince yapılacak.
+> This report shows that **the code is ready**. The numbers come from the 1,000-sample pilot data (900 train / 100 val). They are not a measure of model performance. The real training is done once the 64k-sample generation on Colab is finished.
 
-## Durum
+## Status
 
 | | |
 |---|---|
-| Kod | `models/resnet1d.py`, `models/losses.py`, `train/trainer.py`, `scripts/train_m2.py`, Colab hücreleri 7–12 |
-| Parametre sayısı | **375.078** (4 blok 32–64–128–128, çekirdek 5, GELU, blok başına 2 evrişim; Faz 0 kararıyla tarif edildiği gibi) |
-| Testler | **131 passed** (6 yeni eğitim testi: boyutlar, NLL minimumu, β-NLL gradyanı, epok örnekleyici, uçtan uca eğitim + devam, ablasyon) |
-| Pilot denemesi | 40 epok, yığın 32, yerel RTX 3050 Ti: epok ~1 s. k medyan **%1,8**, %95'lik **%14**; α medyan %9; %95 aralığı kapsama oranı **%96** |
+| Code | `models/resnet1d.py`, `models/losses.py`, `train/trainer.py`, `scripts/train_m2.py`, Colab cells 7–12 |
+| Parameter count | **375,078** (4 blocks 32–64–128–128, kernel 5, GELU, 2 convolutions per block; as described, by the Phase 0 decision) |
+| Tests | **131 passed** (6 new training tests: shapes, NLL minimum, β-NLL gradient, epoch sampler, end-to-end training + resume, ablation) |
+| Pilot trial | 40 epochs, batch 32, local RTX 3050 Ti: ~1 s per epoch. k median **1.8%**, p95 **14%**; α median 9%; 95% interval coverage **96%** |
 
-## Gerçeklenen ayarlar (`configs/train_m2.yaml`)
+## Settings as implemented (`configs/train_m2.yaml`)
 
-- **Model:** global ortalama havuzlama sonrası 7 skalerle birleşen 128 nöronlu baş. Çıktılar ln k, ln α ve ln G_c için ortalama ve log-varyans. Log-varyans yumuşak sınırlı [−14, 4].
-- **Kayıp:** β-NLL (β = 0,5); hedef ağırlıkları ln k 1, ln α 0,5, ln G_c 0,2.
-- **Optimizasyon:**
-  - AdamW, öğrenme oranı 1e-3, ağırlık azalması 1e-4.
-  - 2 epok ısınma + kosinüs (adım bazında).
-  - Gradyan kırpma 1,0; yığın 256; en fazla 60 epok.
-  - Val ln k NLL'sine göre erken durdurma, sabır 8.
-- **Karışık hassasiyet:** yalnızca CUDA'da. A100/L4'te bf16, diğerlerinde fp16 + GradScaler.
-- **Veri:**
-  - Ölçüm etkileri train'de her epokta yeniden çekiliyor. Epok numarası örnek indeksine kodlanıyor (`EpochSampler`), böylece kalıcı DataLoader işçileri de her epokta yeni gürültü üretiyor.
-  - Val'de etkiler sabit.
-  - Normalizasyon yalnızca train'den (5.000 örnek).
-  - Topluluk çeşitliliği için her tohumun gürültü tohumu da farklı.
-- **Koşu klasörü** `runs/<etiket>_m2_seed<n>/`:
-  - Kayıt: `config.yaml`, `run_info.json` (git commit, kod özeti, cihaz, veri dosyaları), `normalizer.json`.
-  - Ağırlıklar: `best.pt`, `last.pt`.
-  - İzleme: `metrics.csv`, `learning_curve.png`, `summary.json`.
-  - **Aynı komut yarıda kalan koşuyu son epoktan sürdürüyor** (test edildi).
-- **Ablasyon:** `--exclude-k-band 1.5 2.5` bandı train'den **ve** val'den çıkarıyor (test edildi).
-- **Veri miktarı çalışması:** `--max-train 10000/25000` (Faz 6'daki "daha fazla veri gerekir mi" kararı için).
+- **Model:** after global average pooling, a 128-neuron head joined with the 7 scalars. Outputs: mean and log-variance for ln k, ln α and ln G_c. The log-variance is softly bounded to [−14, 4].
+- **Loss:** β-NLL (β = 0.5); target weights ln k 1, ln α 0.5, ln G_c 0.2.
+- **Optimisation:**
+  - AdamW, learning rate 1e-3, weight decay 1e-4.
+  - 2-epoch warm-up + cosine (per step).
+  - Gradient clipping 1.0; batch 256; at most 60 epochs.
+  - Early stopping on val ln k NLL, patience 8.
+- **Mixed precision:** CUDA only. bf16 on A100/L4, fp16 + GradScaler elsewhere.
+- **Data:**
+  - Measurement effects are redrawn every epoch in train. The epoch number is encoded in the sample index (`EpochSampler`), so persistent DataLoader workers also produce new noise every epoch.
+  - Effects are fixed in val.
+  - Normalisation from train only (5,000 samples).
+  - For ensemble diversity, each seed also has a different noise seed.
+- **Run folder** `runs/<tag>_m2_seed<n>/`:
+  - Record: `config.yaml`, `run_info.json` (git commit, code hash, device, data files), `normalizer.json`.
+  - Weights: `best.pt`, `last.pt`.
+  - Monitoring: `metrics.csv`, `learning_curve.png`, `summary.json`.
+  - **The same command resumes an interrupted run from the last epoch** (tested).
+- **Ablation:** `--exclude-k-band 1.5 2.5` removes the band from train **and** val (tested).
+- **Data size study:** `--max-train 10000/25000` (for the Phase 6 decision "is more data needed").
 
-## Pilot gözlemleri
+## Pilot observations
 
-- 256'lık yığınla 900 örnek epok başına yalnızca 3 adım ediyor; 5 epokluk ilk deneme anlamlı değildi. Yığın 32 ve 40 epokla model düzenli öğrendi (`runs/pilot-trial-b32_m2_seed1/learning_curve.png`). 50 bin örnekte 256'lık yığın epok başına ~195 adım eder; sorun olmaz.
-- Val ln k NLL'si 40 epokta hâlâ düşüyordu: bu veri boyutunda model veri sınırlı.
-- β-NLL kayıp değeri erken düzleşiyor (β ağırlığı ölçeği bastırıyor). İzleme ve erken durdurma bu yüzden fiziksel birimlerde NLL ve hatayla yapılıyor.
+- With batch 256, 900 samples give only 3 steps per epoch; the first 5-epoch trial was not meaningful. With batch 32 and 40 epochs the model learned steadily (`runs/pilot-trial-b32_m2_seed1/learning_curve.png`). With 50k samples, batch 256 gives ~195 steps per epoch; no problem.
+- The val ln k NLL was still falling at epoch 40: at this data size the model is data-limited.
+- The β-NLL loss value flattens early (the β weight suppresses the scale). Monitoring and early stopping therefore use the NLL and error in physical units.
 
-## Sıradaki adımlar (Colab, üretim bitince)
+## Next steps (Colab, after generation)
 
-1. Yeni zip'i Drive'a yükleyin. **Üretim bitmeden yüklemeyin**, çünkü değişen kod yarıda kalan parçaları reddettirir.
-2. GPU çalışma zamanı (L4 yeterli) → hücre 1, 2, 7 → 8 (5 epok deneme): öğrenme eğrisini birlikte inceleyelim.
-3. Onaydan sonra 9 (veri miktarı), 10 (5 tohumlu topluluk), 11 (ablasyon).
+1. Upload the new zip to Drive. **Do not upload before generation finishes**, because the changed code would make it reject the unfinished shards.
+2. GPU runtime (L4 is enough) → cells 1, 2, 7 → 8 (5-epoch trial): let us review the learning curve together.
+3. After approval, 9 (data size), 10 (5-seed ensemble), 11 (ablation).

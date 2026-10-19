@@ -43,12 +43,12 @@ def main() -> None:
         "k [W/mK]": (p["k"], [(0.05, 0.1), (0.1, 0.2), (0.2, 0.5), (0.5, 1), (1, 2), (2, 5), (5, 10), (10, 20), (20, 30.01)]),
         "G_c [W/m2K]": (p["G_c"], [(0, 2000), (2000, 4000), (4000, 8000), (8000, 1e9)]),
         "tau_end": (p["tau_end"], [(0, 0.7), (0.7, 0.9), (0.9, 1.05), (1.05, 9)]),
-        "kalinlik [mm]": (p["sample_thickness"] * 1e3, [(8, 12), (12, 16), (16, 20), (20, 25.01)]),
-        "sure derinlikle sinirli": (p["t_end_limited_by_depth"], [0, 1]),
-        "guc 1 W'ta kirpik": ((P0 >= 0.9999).astype(int), [0, 1]),
-        "guc 8 mW'ta kirpik": ((P0 <= 0.008 * 1.0001).astype(int), [0, 1]),
+        "thickness [mm]": (p["sample_thickness"] * 1e3, [(8, 12), (12, 16), (16, 20), (20, 25.01)]),
+        "t_end limited by depth": (p["t_end_limited_by_depth"], [0, 1]),
+        "power clipped at 1 W": ((P0 >= 0.9999).astype(int), [0, 1]),
+        "power clipped at 8 mW": ((P0 <= 0.008 * 1.0001).astype(int), [0, 1]),
         "SPS": (sps, sorted(set(sps.tolist()))),
-        "temas asimetrisi h_max/h_min": (asym, [(1, 2), (2, 4), (4, 10), (10, 30), (30, 101)]),
+        "contact asymmetry h_max/h_min": (asym, [(1, 2), (2, 4), (4, 10), (10, 30), (30, 101)]),
     }
     table = breakdown(pred, p, by)
     # cross-table: k band x contact asymmetry (median / p95 |k error| %)
@@ -58,7 +58,7 @@ def main() -> None:
             sel = (p["k"] >= kb[0]) & (p["k"] < kb[1]) & (asym >= ab[0]) & (asym < ab[1])
             if sel.any():
                 s_ = summarize(err["k"][sel])
-                cross.append({"k": str(kb), "asimetri": str(ab), "n": s_["n"], "k_med_pct": s_["med_pct"],
+                cross.append({"k": str(kb), "asymmetry": str(ab), "n": s_["n"], "k_med_pct": s_["med_pct"],
                               "k_p95_pct": s_["p95_pct"], "k_bias_pct": s_["bias_pct"]})
     cross = pd.DataFrame(cross)
     floor = calibration_floor(ds.params, power_error_rel=0.005)
@@ -75,7 +75,7 @@ def main() -> None:
     print("overall:", json.dumps(overall), json.dumps(cov))
     print("calibration floor (unremovable):", json.dumps(floor))
     print(table.round(2).to_string(index=False))
-    print("\nk bandi x temas asimetrisi:")
+    print("\nk band x contact asymmetry:")
     print(cross.round(2).to_string(index=False))
     print("\nworst 15 (k):")
     print(wt.round(4).to_string(index=False))
@@ -88,13 +88,13 @@ def main() -> None:
     fig, axs = plt.subplots(1, 3, figsize=(16, 4.2))
     sc = axs[0].scatter(p["k"], err["k"] * 100, s=3, c=np.log10(p["G_c"]), cmap="viridis", alpha=0.6)
     fig.colorbar(sc, ax=axs[0]).set_label("log10 G_c")
-    axs[0].set_xscale("log"); axs[0].set_xlabel("k [W/m·K]"); axs[0].set_ylabel("k hatası [%]")
-    axs[0].set_ylim(-40, 40); style(axs[0], "k hatası – k (renk: G_c)")
+    axs[0].set_xscale("log"); axs[0].set_xlabel("k [W/m·K]"); axs[0].set_ylabel("k error [%]")
+    axs[0].set_ylim(-40, 40); style(axs[0], "k error vs k (colour: G_c)")
     axs[1].scatter(p["tau_end"], err["k"] * 100, s=3, alpha=0.5)
-    axs[1].set_xlabel("τ_son"); axs[1].set_ylim(-40, 40); style(axs[1], "k hatası – τ_son")
+    axs[1].set_xlabel("τ_end"); axs[1].set_ylim(-40, 40); style(axs[1], "k error vs τ_end")
     axs[2].scatter(p["k"], err["alpha"] * 100, s=3, alpha=0.5)
-    axs[2].set_xscale("log"); axs[2].set_xlabel("k [W/m·K]"); axs[2].set_ylabel("α hatası [%]")
-    axs[2].set_ylim(-60, 60); style(axs[2], "α hatası – k")
+    axs[2].set_xscale("log"); axs[2].set_xlabel("k [W/m·K]"); axs[2].set_ylabel("α error [%]")
+    axs[2].set_ylim(-60, 60); style(axs[2], "α error vs k")
     save(fig, run / f"diagnose_{args.split}.png")
 
 

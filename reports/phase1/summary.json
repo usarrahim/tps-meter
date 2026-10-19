@@ -32,6 +32,6 @@
     "max_abs_err_alpha_pct": 0.018779855118411515,
     "naive_max_abs_err_k_pct": 0.7309586430480297,
     "naive_max_abs_err_alpha_pct": 2.157518905790301,
-    "max_fit_time_s": 0.06697410000197124
+    "max_fit_time_s": 0.07181739999214187
   }
 }

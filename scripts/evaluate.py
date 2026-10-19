@@ -51,8 +51,8 @@ TARGET_MED, TARGET_P95 = 1.0, 4.0
 T0 = time.perf_counter()
 SPLITS = ("val", "test", "test_interp", "test_faulty")
 TRUST_SPLITS = ("val", "test", "test_faulty")
-SECOND_USE = ("İKİNCİ KULLANIM: test setleri ilk kez Faz 6'da kullanıldı. Bu koşu yalnızca val'dan seçilen "
-              "yeni güven kontrollerini ve varyans ölçeğini raporlar; model ve eşik seçimi test setine bakılarak yapılmadı.")
+SECOND_USE = ("SECOND USE: the test sets were first used in Phase 6. This run only reports the new trust checks "
+              "and the variance scale, both chosen on val; no model or threshold choice looked at the test sets.")
 
 
 def band_table(err: dict, k: np.ndarray, sel: np.ndarray, label: str) -> list[dict]:
@@ -60,7 +60,7 @@ def band_table(err: dict, k: np.ndarray, sel: np.ndarray, label: str) -> list[di
     for lo, hi in [*K_BANDS, (0.05, 30.01)]:
         m = sel & (k >= lo) & (k < hi)
         ek, ea = summarize(err["k"][m]), summarize(err["alpha"][m])
-        rows.append({"model": label, "k_band": f"{lo}-{min(hi, 30)}" if hi < 30.01 else "tümü", "n": ek["n"],
+        rows.append({"model": label, "k_band": f"{lo}-{min(hi, 30)}" if hi < 30.01 else "all", "n": ek["n"],
                      "k_med_pct": ek["med_pct"], "k_p95_pct": ek["p95_pct"], "k_bias_pct": ek["bias_pct"],
                      "a_med_pct": ea["med_pct"], "a_p95_pct": ea["p95_pct"]})
     return rows
@@ -138,27 +138,27 @@ def main() -> None:
 
     # --- test: accuracy per k band, M2 vs M0 -----------------------------------------------------------
     err, err0 = rel_errors(e), m0_errors(m0["test"], p)
-    rows = band_table(err, p["k"], dom, "M2 topluluk") + band_table(err0, p["k"], dom & m0["test"]["ok"], "M0")
-    rows += band_table(err, p["k"], ~dom, "M2 (asimetri > 10, arıza alanı)")
+    rows = band_table(err, p["k"], dom, "M2 ensemble") + band_table(err0, p["k"], dom & m0["test"]["ok"], "M0")
+    rows += band_table(err, p["k"], ~dom, "M2 (asymmetry > 10, fault domain)")
     acc = pd.DataFrame(rows)
     acc.to_csv(out / "test_accuracy_by_band.csv", index=False)
     summary["test_accuracy"] = rows
     summary["test_targets_met"] = {r["k_band"]: bool(r["k_med_pct"] < TARGET_MED and r["k_p95_pct"] < TARGET_P95)
-                                   for r in rows if r["model"] == "M2 topluluk"}
+                                   for r in rows if r["model"] == "M2 ensemble"}
     summary["m0_fail_rate_test"] = float(1 - m0["test"]["ok"].mean())
 
     fig, axs = plt.subplots(1, 3, figsize=(17, 4.4))
-    for ax, (lab, ee, c, mk) in zip(axs[:2], [("M2 topluluk", err, SERIES[0], "o"), ("M0 (klasik)", err0, SERIES[1], "s")]):
+    for ax, (lab, ee, c, mk) in zip(axs[:2], [("M2 ensemble", err, SERIES[0], "o"), ("M0 (classic)", err0, SERIES[1], "s")]):
         ax.axhspan(-TARGET_P95, TARGET_P95, color=BAND, zorder=0)
         ax.scatter(p["k"][dom], 100 * ee["k"][dom], s=3, color=c, alpha=0.5)
         ax.axhline(0, color=INK2, lw=0.8); ax.set_xscale("log"); ax.set_ylim(-30, 30)
-        ax.set_xlabel("k [W/m·K]"); ax.set_ylabel("k bağıl hatası [%]")
-        style(ax, f"{lab}, test (gerçekçi temas); gri: ±%{TARGET_P95:.0f}")
+        ax.set_xlabel("k [W/m·K]"); ax.set_ylabel("k relative error [%]")
+        style(ax, f"{lab}, test (realistic contact); grey: ±{TARGET_P95:.0f}%")
     hmin = np.minimum(p["h_c_bottom"], p["h_c_top"])
     axs[2].scatter(hmin[dom], 100 * err["k"][dom], s=3, color=SERIES[0], alpha=0.5)
     axs[2].set_xscale("log"); axs[2].set_ylim(-30, 30); axs[2].axhline(0, color=INK2, lw=0.8)
-    axs[2].set_xlabel("min(h_c alt, h_c üst) [W/m²·K]"); axs[2].set_ylabel("k bağıl hatası [%]")
-    style(axs[2], "M2 hatası – temas iletkenliği")
+    axs[2].set_xlabel("min(h_c bottom, h_c top) [W/m²·K]"); axs[2].set_ylabel("k relative error [%]")
+    style(axs[2], "M2 error vs contact conductance")
     save(fig, out / "test_error_scatter.png")
 
     calibration_section(ens, dv, dom, tcfg, summary, out)
@@ -179,10 +179,10 @@ def main() -> None:
                                                           <= 1.96 * pa["std"][di, 0]))}
         summary["interpolation"] = interp
         fig, ax = plt.subplots(figsize=(7, 4.2))
-        ax.scatter(pi["k"][di], 100 * ei["k"][di], s=4, color=SERIES[0], alpha=0.5, label="ana model (bandı gördü)")
-        ax.scatter(pi["k"][di], 100 * ea["k"][di], s=4, color=SERIES[1], alpha=0.5, label="ablasyon (bandı görmedi)")
-        ax.axhline(0, color=INK2, lw=0.8); ax.set_xlabel("k [W/m·K]"); ax.set_ylabel("k hatası [%]")
-        ax.legend(frameon=False); style(ax, "test_interp: k = 1,5–2,5 W/m·K bandı")
+        ax.scatter(pi["k"][di], 100 * ei["k"][di], s=4, color=SERIES[0], alpha=0.5, label="main model (saw the band)")
+        ax.scatter(pi["k"][di], 100 * ea["k"][di], s=4, color=SERIES[1], alpha=0.5, label="ablation (band held out)")
+        ax.axhline(0, color=INK2, lw=0.8); ax.set_xlabel("k [W/m·K]"); ax.set_ylabel("k error [%]")
+        ax.legend(frameon=False); style(ax, "test_interp: k = 1.5–2.5 W/m·K band")
         save(fig, out / "interpolation.png")
 
     if "test_faulty" in ens:
@@ -194,7 +194,7 @@ def main() -> None:
     if comp_runs:
         cl = [load_run(r) for r in comp_runs]
         ce = ensemble(predict_members([(m, nm) for m, nm, _ in cl], ds["test"], num_workers=nw))
-        crow = band_table(rel_errors(ce), p["k"], dom, f"kompakt ({len(cl)} üye)")
+        crow = band_table(rel_errors(ce), p["k"], dom, f"compact ({len(cl)} members)")
         diff = np.abs(np.expm1(ce["mean"][dom, 0] - e["mean"][dom, 0]))
         summary["compact"] = {"runs": [r.name for r in comp_runs], "n_params": count_parameters(cl[0][0]),
                               "accuracy": crow, "vs_ensemble_k_med_pct": float(np.median(diff) * 100),
@@ -250,15 +250,15 @@ def calibration_section(ens: dict, dv, dom, tcfg: dict, summary: dict, out: Path
     fig, ax = plt.subplots(figsize=(5.5, 5))
     ax.plot([0, 1], [0, 1], color=INK2, lw=1, ls="--", label="ideal")
     for i, t in enumerate(TARGET_NAMES):
-        ax.plot(levels, raw[:, i], MARKERS[i] + ":", color=SERIES[i], ms=4, alpha=0.6, label=f"{t} (ham)")
+        ax.plot(levels, raw[:, i], MARKERS[i] + ":", color=SERIES[i], ms=4, alpha=0.6, label=f"{t} (raw)")
         ax.plot(levels, cal[:, i], MARKERS[i] + "-", color=SERIES[i], ms=5, label=f"{t} (std × {scale[i]:.2f})")
-    ax.set_xlabel("beklenen kapsama"); ax.set_ylabel("gerçekleşen kapsama"); ax.legend(frameon=False, fontsize=8)
-    style(ax, "Belirsizlik kalibrasyonu (test" + (", 2. kullanım" if second_use else "") + "; ölçek val'dan)")
+    ax.set_xlabel("expected coverage"); ax.set_ylabel("observed coverage"); ax.legend(frameon=False, fontsize=8)
+    style(ax, "Uncertainty calibration (test" + (", second use" if second_use else "") + "; scale from val)")
     save(fig, out / "calibration.png")
 
 
-FAULT_LABELS = {"air_gap_low_hc": "hava boşluğu", "thin_sample": "ince numune", "drift_jump": "kayma sıçraması",
-                "contact_asymmetry_gt_max": "temas asimetrisi > 10"}
+FAULT_LABELS = {"air_gap_low_hc": "air gap", "thin_sample": "thin sample", "drift_jump": "drift jump",
+                "contact_asymmetry_gt_max": "contact asymmetry > 10"}
 
 
 def trust_section(ens: dict, m0: dict, params: dict, dv, dom, tcfg: dict, summary: dict, out: Path,
@@ -302,43 +302,43 @@ def trust_section(ens: dict, m0: dict, params: dict, dv, dom, tcfg: dict, summar
     fig, ax = plt.subplots(figsize=(9, 4.4))
     for j, ver in enumerate(("v1", "v2")):
         vals = [100 * res[ver]["detection"][n]["flagged"] for n in names] + [100 * res[ver]["false_alarm_test_in_domain"]]
-        ax.bar(x + (j - 0.5) * 0.38, vals, 0.38, color=SERIES[j], label=f"güven {ver}")
-    ax.set_xticks(x, [FAULT_LABELS.get(n, n) for n in names] + ["yanlış alarm (normal)"], fontsize=8)
-    ax.axhline(90, color=INK2, ls="--", lw=1.0, label="plan hedefi %90")
-    ax.set_ylabel("işaretlenen [%]"); ax.set_ylim(0, 105); ax.legend(frameon=False)
-    style(ax, "Hatalı ölçümlerin işaretlenmesi (eşikler val'dan" + ("; test 2. kullanım)" if second_use else ")"))
+        ax.bar(x + (j - 0.5) * 0.38, vals, 0.38, color=SERIES[j], label=f"trust {ver}")
+    ax.set_xticks(x, [FAULT_LABELS.get(n, n) for n in names] + ["false alarm (normal)"], fontsize=8)
+    ax.axhline(90, color=INK2, ls="--", lw=1.0, label="plan target 90%")
+    ax.set_ylabel("flagged [%]"); ax.set_ylim(0, 105); ax.legend(frameon=False)
+    style(ax, "Flagging faulty measurements (thresholds from val" + ("; test second use)" if second_use else ")"))
     save(fig, out / "faulty_detection.png")
 
 
 def pct(x: float, nd: int = 1) -> str:
-    """Turkish percent string: 0.123 -> '%12,3'."""
-    return f"%{100 * x:.{nd}f}".replace(".", ",")
+    """Percent string: 0.123 -> '12.3%'."""
+    return f"{100 * x:.{nd}f}%"
 
 
 def trust_lines(s: dict) -> list[str]:
-    """Turkish markdown lines: trust v1 vs v2 detection table and the variance scale."""
+    """Markdown lines: trust v1 vs v2 detection table and the variance scale."""
     lines = []
     if "trust_v2" in s:
         r = s["trust_v2"]
         thr = r["v2"]["thresholds"]
-        lines += ["| Durum | n | v1 | v2 |", "|---|---|---|---|"]
+        lines += ["| Case | n | v1 | v2 |", "|---|---|---|---|"]
         for n, d in r["v2"]["detection"].items():
             lines.append(f"| {FAULT_LABELS.get(n, n)} | {d['n']} | {pct(r['v1']['detection'][n]['flagged'])} | "
                          f"{pct(d['flagged'])} |")
-        lines += [f"| Normal ölçüm (yanlış alarm) | | {pct(r['v1']['false_alarm_test_in_domain'])} | "
+        lines += [f"| Normal measurement (false alarm) | | {pct(r['v1']['false_alarm_test_in_domain'])} | "
                   f"{pct(r['v2']['false_alarm_test_in_domain'])} |", "",
-                  f"v2 eşikleri: ortak kuyruk payı {thr['tail']:.4f}, val'da toplam yanlış alarm "
-                  f"{pct(thr['val_false_alarm'])} (bütçe {pct(thr['budget'], 0)}). "
-                  "Aralık kontrolü (val'da görülen tahmin aralığı, SI): "
+                  f"v2 thresholds: shared tail share {thr['tail']:.4f}, total false alarm on val "
+                  f"{pct(thr['val_false_alarm'])} (budget {pct(thr['budget'], 0)}). "
+                  "Range check (prediction range seen on val, SI): "
                   + ", ".join(f"{t[3:]} {lo:.3g}–{hi:.3g}" for t, (lo, hi) in r["v2"]["range_physical"].items()) + "."]
         u = r["v2"]["faulty_unflagged_k_err"]
         if u:
-            lines.append(f"v2'nin işaretlemediği arızalı ölçümlerde k hatası medyan {pct(u['med_pct'] / 100)} (n={u['n']}).")
+            lines.append(f"Faulty measurements not flagged by v2: median k error {pct(u['med_pct'] / 100)} (n={u['n']}).")
     if "variance_scale" in s:
         v = s["variance_scale"]
-        lines += ["", "Varyans ölçeği (val'dan; tahmin edilen std bu katsayıyla çarpılır): "
-                  + ", ".join(f"{t} × {x:.3f}".replace(".", ",") for t, x in v["scale"].items()) + ".", "",
-                  "| Hedef | test %68 ham | test %68 ölçekli | test %95 ham | test %95 ölçekli |", "|---|---|---|---|---|"]
+        lines += ["", "Variance scale (from val; the predicted std is multiplied by this factor): "
+                  + ", ".join(f"{t} × {x:.3f}" for t, x in v["scale"].items()) + ".", "",
+                  "| Target | test 68% raw | test 68% scaled | test 95% raw | test 95% scaled |", "|---|---|---|---|---|"]
         for t in v["scale"]:
             a, b = s["calibration_test"][t], v["test_scaled"][t]
             lines.append(f"| {t} | {pct(a['cov68'])} | {pct(b['cov68'])} | {pct(a['cov95'])} | {pct(b['cov95'])} |")
@@ -346,77 +346,80 @@ def trust_lines(s: dict) -> list[str]:
 
 
 def write_trust_report(s: dict, out: Path) -> None:
-    lines = ["# Güven kontrolleri v2 ve varyans ölçeği — M2 v1", "",
-             "> **Bu sonuçlar yalnızca simülasyona dayanır.**", f"> **{s['test_use']}**", "",
-             f"Oluşturma: {s['created']}. Topluluk: {', '.join(s['ensemble'])}. Model yeniden eğitilmedi.", "",
+    """Short markdown report of a --trust-only run."""
+    lines = ["# Trust checks v2 and variance scale — M2 v1", "",
+             "> **These results are based on simulation only.**", f"> **{s['test_use']}**", "",
+             f"Created: {s['created']}. Ensemble: {', '.join(s['ensemble'])}. The model was not retrained.", "",
              *trust_lines(s)]
     (out / "TRUST_REPORT.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def write_model_card(s: dict, cfg: dict, out: Path) -> None:
+    """Model card (markdown) from the evaluation summary."""
     acc = pd.DataFrame(s["test_accuracy"])
-    m2 = acc[acc.model == "M2 topluluk"]
+    m2 = acc[acc.model == "M2 ensemble"]
     m0 = acc[acc.model == "M0"]
     lines = [
-        "# M2 v1 — model kartı",
+        "# M2 v1 — model card",
         "",
-        "> **Bu sonuçlar yalnızca simülasyona dayanır; gerçek cihaz verisiyle doğrulama henüz yapılmadı.**",
+        "> **These results are based on simulation only; validation with real device data has not been done yet.**",
         "",
-        f"Oluşturma: {s['created']}. Topluluk: {', '.join(s['ensemble'])} (üye başına {s['n_params_member']:,} parametre).",
+        f"Created: {s['created']}. Ensemble: {', '.join(s['ensemble'])} ({s['n_params_member']:,} parameters per member).",
         "",
-        "## Ne yapar",
-        "TPS (hot-disk) ölçüm eğrisinden ln k, ln α ve ln G_c (sensör–numune toplam arayüz iletkenliği) tahmini ve "
-        "her biri için belirsizlik (5 üyeli topluluk: model belirsizliği + üyeler arası fark).",
-        "Girdi: `tpslib.data.features.make_features` çıktısı (256 log-zaman bini × 3 kanal + 7 skaler). "
-        "Ham cihaz kaydı önce `tpslib.measurement.preprocess` ile işlenmelidir.",
+        "## What it does",
+        "Estimates ln k, ln α and ln G_c (total sensor–sample interface conductance) from a TPS (hot-disk) "
+        "measurement curve, with an uncertainty for each (5-member ensemble: per-model uncertainty + spread between members).",
+        "Input: the output of `tpslib.data.features.make_features` (256 log-time bins × 3 channels + 7 scalars). "
+        "A raw device record must first go through `tpslib.measurement.preprocess`.",
         "",
-        "## Eğitim verisi",
-        "Sentetik veri v1 (`data/synthetic/v1`, manifest'te tohumlar ve config özetleri): r–z sonlu hacim simülatörü, "
-        "20 halkalı bakır spiral, Kapton/yapıştırıcı katmanları, iki yüzde ayrı temas, sabit akım. "
-        f"Eğitim: {s['max_contact_asymmetry']:.0f} kattan küçük temas asimetrili ~37.600 örnek. Ölçüm etkileri (gürültü, kayma, "
-        "t_c, güç ve kalibrasyon hataları) her epokta yeniden eklendi.",
+        "## Training data",
+        "Synthetic data v1 (`data/synthetic/v1`; seeds and config hashes in the manifest): r–z finite-volume simulator, "
+        "20-ring copper spiral, Kapton/adhesive layers, separate contact on each face, constant current. "
+        f"Training: ~37,600 samples with contact asymmetry below {s['max_contact_asymmetry']:.0f}×. Measurement effects "
+        "(noise, drift, t_c, power and calibration errors) were re-drawn every epoch.",
         "",
-        "## Geçerli aralık",
-        "k 0,05–30 W/m·K, ρc_p 0,8–4,5 MJ/m³·K (α ≈ 0,011–37 mm²/s), numune kalınlığı 8–25 mm, yarıçapı 20–30 mm, "
-        "iki yüzde h_c 500–50.000 W/m²·K ve aralarında en fazla 10 kat fark, güç 8 mW–1 W (otomatik ayar kuralıyla).",
+        "## Valid range",
+        "k 0.05–30 W/m·K, ρc_p 0.8–4.5 MJ/m³·K (α ≈ 0.011–37 mm²/s), sample thickness 8–25 mm, radius 20–30 mm, "
+        "h_c 500–50,000 W/m²·K on each face with at most a 10× difference, power 8 mW–1 W (auto-setup rule).",
         "",
-        "## Test sonuçları (kilitli test seti, 5.000 örnek, gerçekçi temas alanı)",
+        "## Test results (locked test set, 5,000 samples, realistic contact domain)",
         "",
-        "| k bandı [W/m·K] | n | M2 k medyan | M2 k %95 | M0 k medyan | M0 k %95 | M2 α medyan | M2 α %95 |",
+        "| k band [W/m·K] | n | M2 k median | M2 k p95 | M0 k median | M0 k p95 | M2 α median | M2 α p95 |",
         "|---|---|---|---|---|---|---|---|",
     ]
     for (_, a), (_, b) in zip(m2.iterrows(), m0.iterrows()):
-        lines.append(f"| {a.k_band} | {a.n} | %{a.k_med_pct:.2f} | %{a.k_p95_pct:.2f} | %{b.k_med_pct:.2f} | "
-                     f"%{b.k_p95_pct:.2f} | %{a.a_med_pct:.2f} | %{a.a_p95_pct:.2f} |")
+        lines.append(f"| {a.k_band} | {a.n} | {a.k_med_pct:.2f}% | {a.k_p95_pct:.2f}% | {b.k_med_pct:.2f}% | "
+                     f"{b.k_p95_pct:.2f}% | {a.a_med_pct:.2f}% | {a.a_p95_pct:.2f}% |")
     cal = s["calibration_test"]["ln_k"]
-    lines += ["", f"Hedef (simülasyon): k medyan < %{TARGET_MED:.0f}, %95'lik < %{TARGET_P95:.0f}. "
-              f"Karşılanan bantlar: {', '.join(b for b, ok in s['test_targets_met'].items() if ok) or 'yok'}.",
-              f"Belirsizlik kalibrasyonu (ln k): %68 aralık kapsaması {cal['cov68']:.3f}, %95 aralık {cal['cov95']:.3f}.",
-              "Kalibrasyon hataları (α_R σ %1, yarıçap σ %0,5) ve ±%0,5 güç hatası eğriden görülemez; "
-              "k için kaldırılamaz taban yaklaşık %0,77 medyan, %2,3 %95'lik."]
+    lines += ["", f"Target (simulation): k median < {TARGET_MED:.0f}%, p95 < {TARGET_P95:.0f}%. "
+              f"Bands that meet it: {', '.join(b for b, ok in s['test_targets_met'].items() if ok) or 'none'}.",
+              f"Uncertainty calibration (ln k): 68% interval coverage {cal['cov68']:.3f}, 95% interval {cal['cov95']:.3f}.",
+              "Calibration errors (α_R σ 1%, radius σ 0.5%) and the ±0.5% power error cannot be seen in the curve; "
+              "the irreducible floor for k is about 0.77% median, 2.3% p95."]
     if "interpolation" in s:
         it = s["interpolation"]
-        lines += ["", "## İnterpolasyon (ablasyon)",
-                  f"k = 1,5–2,5 W/m·K bandı eğitimden çıkarılan model bu bantta k medyan %{it['ablation_on_band']['med_pct']:.2f}, "
-                  f"%95 %{it['ablation_on_band']['p95_pct']:.2f} (bandı gören model: %{it['main_on_band']['med_pct']:.2f} / "
-                  f"%{it['main_on_band']['p95_pct']:.2f})."]
+        lines += ["", "## Interpolation (ablation)",
+                  f"A model trained without the k = 1.5–2.5 W/m·K band reaches k median {it['ablation_on_band']['med_pct']:.2f}%, "
+                  f"p95 {it['ablation_on_band']['p95_pct']:.2f}% on that band (model that saw the band: "
+                  f"{it['main_on_band']['med_pct']:.2f}% / {it['main_on_band']['p95_pct']:.2f}%)."]
     if "trust_v2" in s or "variance_scale" in s:
-        lines += ["", "## Hatalı ölçümler ve belirsizlik ölçeği (eşikler ve ölçek val'dan)", *trust_lines(s)]
+        lines += ["", "## Faulty measurements and uncertainty scale (thresholds and scale from val)", *trust_lines(s)]
     if "compact" in s:
         c = s["compact"]
-        tot = [r for r in c["accuracy"] if r["k_band"] == "tümü"][0]
-        lines += ["", "## Kompakt cihaz modeli",
-                  f"{c['n_params']:,} parametre ({len(c['runs'])} üye): k medyan %{tot['k_med_pct']:.2f}, %95 %{tot['k_p95_pct']:.2f}; "
-                  f"büyük toplulukla fark medyan %{c['vs_ensemble_k_med_pct']:.2f}, %99'luk %{c['vs_ensemble_k_p99_pct']:.2f}."]
-    lines += ["", "## Bilinen sınırlar",
-              "- **Yalnızca simülasyon.** Gerçek cihazın gürültüsü, kayması, t_c'si ve temas dağılımı yer tutucu değerlerle modellendi (`configs/device.yaml`).",
-              "- **Yüksek k (> 5 W/m·K) en zor bölge.** Güç 1 W'ta kırpılıyor, sinyalin çoğu sensörün kendi katmanlarından geliyor; hata belirgin büyük.",
-              "- **Temas asimetrisi > 10 eğitim alanı dışında.** k düşük tahmin edilir; güven kontrolleri bu ölçümleri işaretlemeli.",
-              "- **Modellenmeyen fizik:** uç ısınması, PETG plaka, anizotropi, sıcaklığa bağlı özellikler, numune pürüzlülüğü.",
-              "- **Tek sensör geometrisi.** a = 6,4 mm, 20 halka (varyant A). Başka geometri için yeniden veri ve eğitim gerekir.",
-              "", "## Dosyalar",
-              f"`onnx/m2_ensemble.onnx` (normalizasyon içinde; girdi: ham özellikler, çıktı: ln birimlerinde ortalama ve std); "
-              f"PyTorch ile en büyük fark: {s['onnx']['max_abs_diff_vs_pytorch']}."]
+        tot = [r for r in c["accuracy"] if r["k_band"] == "all"][0]
+        lines += ["", "## Compact device model",
+                  f"{c['n_params']:,} parameters ({len(c['runs'])} members): k median {tot['k_med_pct']:.2f}%, "
+                  f"p95 {tot['k_p95_pct']:.2f}%; difference to the large ensemble median {c['vs_ensemble_k_med_pct']:.2f}%, "
+                  f"p99 {c['vs_ensemble_k_p99_pct']:.2f}%."]
+    lines += ["", "## Known limitations",
+              "- **Simulation only.** Noise, drift, t_c and contact distribution of the real device are modelled with placeholder values (`configs/device.yaml`).",
+              "- **High k (> 5 W/m·K) is the hardest region.** Power clips at 1 W and most of the signal comes from the sensor's own layers; the error is clearly larger.",
+              "- **Contact asymmetry > 10 is outside the training domain.** k is underestimated; the trust checks should flag these measurements.",
+              "- **Physics not modelled:** lead heating, PETG plate, anisotropy, temperature-dependent properties, sample roughness.",
+              "- **Single sensor geometry.** a = 6.4 mm, 20 rings (variant A). Another geometry needs new data and training.",
+              "", "## Files",
+              "`onnx/m2_ensemble.onnx` (normalisation built in; input: raw features, output: mean and std in ln units); "
+              f"largest difference to PyTorch: {s['onnx']['max_abs_diff_vs_pytorch']}."]
     (out / "MODEL_CARD.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

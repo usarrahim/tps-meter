@@ -99,17 +99,17 @@ def _plot_curves(rows: list[dict], path: Path) -> None:
     fig, axs = plt.subplots(1, 3, figsize=(15, 4))
     axs[0].plot(ep, [r["train_loss"] for r in rows], "-o", color=SERIES[0], ms=3, label="train (β-NLL)")
     axs[0].plot(ep, [r["val_loss"] for r in rows], "-s", color=SERIES[1], ms=3, label="val (β-NLL)")
-    axs[0].set_xlabel("epok"); axs[0].legend(frameon=False); style(axs[0], "Kayıp (normalize birimler)")
+    axs[0].set_xlabel("epoch"); axs[0].legend(frameon=False); style(axs[0], "Loss (normalised units)")
     for i, t in enumerate(["ln_k", "ln_alpha", "ln_G_c"]):
         axs[1].plot(ep, [r[f"val_nll_{t}"] for r in rows], "-o", ms=3, color=SERIES[i], label=t)
-    axs[1].set_xlabel("epok"); axs[1].legend(frameon=False); style(axs[1], "Val NLL (ln birimleri)")
+    axs[1].set_xlabel("epoch"); axs[1].legend(frameon=False); style(axs[1], "Val NLL (ln units)")
     for i, t in enumerate(["ln_k", "ln_alpha"]):
         axs[2].plot(ep, [100 * r[f"val_med_rel_err_{t}"] for r in rows], "-o", ms=3, color=SERIES[i],
-                    label=f"{t[3:]} medyan")
+                    label=f"{t[3:]} median")
         axs[2].plot(ep, [100 * r[f"val_p95_rel_err_{t}"] for r in rows], "--", color=SERIES[i],
                     label=f"{t[3:]} %95")
-    axs[2].set_yscale("log"); axs[2].set_xlabel("epok"); axs[2].set_ylabel("bağıl hata [%]")
-    axs[2].legend(frameon=False, fontsize=8); style(axs[2], "Val bağıl hata")
+    axs[2].set_yscale("log"); axs[2].set_xlabel("epoch"); axs[2].set_ylabel("relative error [%]")
+    axs[2].legend(frameon=False, fontsize=8); style(axs[2], "Val relative error")
     save(fig, path)
 
 

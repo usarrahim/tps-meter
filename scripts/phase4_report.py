@@ -28,14 +28,14 @@ from tpslib.synth_analytic import clean_record_case as analytic_case
 S = load_sensor()
 A, M = S.outer_radius, S.n_rings
 EFFECTS = ["noise", "drift", "timing", "power", "electronic", "calibration"]
-CH_LABEL = {"theta_rel": "θ / θ_ref", "dtheta_dlnt_rel": "dθ/d ln t / θ_ref", "log_count": "ln(1 + örnek sayısı)"}
+CH_LABEL = {"theta_rel": "θ / θ_ref", "dtheta_dlnt_rel": "dθ/d ln t / θ_ref", "log_count": "ln(1 + sample count)"}
 
 
 def realisations(ds: TPSDataset, out: Path):
     """Five noisy realisations of one clean curve and their feature channels (low and high k)."""
     picks = {}
     k = ds.params["k"]
-    for name, target in [("düşük k", 0.2), ("yüksek k", 15.0)]:
+    for name, target in [("low k", 0.2), ("high k", 15.0)]:
         picks[name] = int(np.argmin(np.abs(np.log(k) - np.log(target))))
     fig, axs = plt.subplots(2, 4, figsize=(18, 7.5))
     f = ds._h5 = ds._h5 or __import__("h5py").File(ds.path, "r")
@@ -51,11 +51,11 @@ def realisations(ds: TPSDataset, out: Path):
             ax.plot(p.t, p.dT, color=col, lw=0.6, alpha=0.8)
             for c in range(3):
                 axs[row, c + 1].plot(F["t_grid"], F["seq"][c], color=col, lw=1.0, alpha=0.9,
-                                     label=f"örnek {r + 1}" if c == 0 else None)
-        ax.plot(t, dT, color="black", lw=1.2, ls="--", label="temiz")
+                                     label=f"realisation {r + 1}" if c == 0 else None)
+        ax.plot(t, dT, color="black", lw=1.2, ls="--", label="clean")
         ax.set_xscale("log"); ax.set_xlabel("t [s]"); ax.set_ylabel("ΔT [K]")
         ax.legend(frameon=False, fontsize=8)
-        style(ax, f"{name}: k={prm['k']:.3g} W/m·K, {prm['sps']:.0f} SPS, t_son={prm['t_end']:.0f} s")
+        style(ax, f"{name}: k={prm['k']:.3g} W/m·K, {prm['sps']:.0f} SPS, t_end={prm['t_end']:.0f} s")
         for c in range(3):
             a2 = axs[row, c + 1]
             a2.plot(clean["t_grid"], clean["seq"][c], color="black", lw=1.0, ls="--")
@@ -80,8 +80,8 @@ def normalised(ds: TPSDataset, out: Path) -> Normalizer:
     for c in range(S_.shape[1]):
         axs[0].hist(S_[:, c, :].ravel(), bins=120, histtype="step", lw=1.8, color=SERIES[c],
                     range=(-5, 5), density=True, label=CH_LABEL[CHANNELS[c]])
-    axs[0].legend(frameon=False, fontsize=8); axs[0].set_xlabel("normalize değer"); axs[0].set_ylabel("yoğunluk")
-    style(axs[0], "Dizi kanalları (tüm binler)")
+    axs[0].legend(frameon=False, fontsize=8); axs[0].set_xlabel("normalised value"); axs[0].set_ylabel("density")
+    style(axs[0], "Sequence channels (all bins)")
     axs[1].boxplot([C_[:, i] for i in range(C_.shape[1])], tick_labels=SCALARS, vert=True, showfliers=True,
                    flierprops={"markersize": 2})
     axs[1].tick_params(axis="x", rotation=40)
@@ -102,11 +102,11 @@ def m0_gate(out: Path) -> dict:
     for k in ks:
         rc = float(np.interp(np.log(k), np.log([0.05, 30]), [1.0e6, 4.0e6]))
         t, dT, prm = analytic_case(float(k), rho_cp=rc, alpha_R_calib_rel=0.0, radius_calib_rel=0.0)
-        for mode, eff in [("ölçüm etkileri", {e: True for e in EFFECTS if e != "calibration"}),
-                          ("+ kalibrasyon hatası", True)]:
+        for mode, eff in [("measurement effects", {e: True for e in EFFECTS if e != "calibration"}),
+                          ("+ calibration error", True)]:
             for r in range(5):
                 prm_r = dict(prm)
-                if mode != "ölçüm etkileri":
+                if mode != "measurement effects":
                     g = np.random.default_rng(900 + r)
                     prm_r["alpha_R_calib_rel"] = g.normal(0, 0.01)
                     prm_r["radius_calib_rel"] = g.normal(0, 0.005)
@@ -123,15 +123,15 @@ def m0_gate(out: Path) -> dict:
         for i, (mode, g) in enumerate(d.groupby("mode", sort=False)):
             ax.plot(g.k, g[col], MARKERS[i], color=SERIES[i], ms=5, alpha=0.8, label=mode)
         ax.axhline(0, color=INK2, lw=0.8); ax.set_xscale("log")
-        ax.set_xlabel("k [W/m·K]"); ax.set_ylabel(f"M0 {lab} hatası [%]")
+        ax.set_xlabel("k [W/m·K]"); ax.set_ylabel(f"M0 {lab} error [%]")
         ax.legend(frameon=False, fontsize=8)
-        style(ax, f"M0, gürültülü ideal eğriler: {lab} (5 tekrar/k" + (", gri: ±%2 kapı)" if lim else ")"))
+        style(ax, f"M0, noisy ideal curves: {lab} (5 repeats per k" + ("; grey: ±2% gate)" if lim else ")"))
     save(fig, out / "m0_noisy_gate.png")
-    meas = d[d["mode"] == "ölçüm etkileri"]
+    meas = d[d["mode"] == "measurement effects"]
     return {"passed": bool((meas.err_k_pct.abs() < 2).all()),
             "max_abs_err_k_pct": float(meas.err_k_pct.abs().max()),
             "max_abs_err_alpha_pct": float(meas.err_alpha_pct.abs().max()),
-            "with_calibration_max_abs_err_k_pct": float(d[d["mode"] != "ölçüm etkileri"].err_k_pct.abs().max())}
+            "with_calibration_max_abs_err_k_pct": float(d[d["mode"] != "measurement effects"].err_k_pct.abs().max())}
 
 
 def sensitivity(out: Path) -> None:

@@ -1,65 +1,65 @@
-# Faz 1 raporu — Analitik çözüm ve M0 (2026-10-17)
+# Phase 1 report — Analytic solution and M0 (2026-10-17)
 
-> Bu fazdaki tüm sonuçlar **analitik, gürültüsüz sentetik veriye** dayanır. Bu sonuçlar kodun doğru olduğunu gösterir (planın T5 testi); cihazın gerçek doğruluğunu göstermez.
+> All results in this phase are based on **analytic, noise-free synthetic data**. They show that the code is correct (test T5 of the plan); they do not show the real accuracy of the device.
 
-## Özet
+## Summary
 
-| Kapı | Hedef | Sonuç | Durum |
+| Gate | Target | Result | Status |
 |---|---|---|---|
-| D(τ), PROJECT_RULES.md'deki 6 değer | %0,05 içinde | en büyük sapma **%0,0007** | ✔ |
-| Tablo + interpolasyon, doğrudan hesaba göre | — | en büyük mutlak fark **2,6·10⁻¹³** | ✔ |
-| M0, 20 k (0,05–30 W/m·K), sabit güç | k ve α < %0,5 | k ≤ %0,0002, α ≤ %0,001 | ✔ |
-| M0, aynı 20 k, sabit akım (gerçek cihaz koşulu) | k ve α < %0,5 | k ≤ **%0,003**, α ≤ **%0,019** | ✔ |
-| pytest | hatasız | **65 passed** | ✔ |
+| D(τ), the 6 values in PROJECT_RULES.md | within 0.05% | largest deviation **0.0007%** | ✔ |
+| Table + interpolation vs direct computation | — | largest absolute difference **2.6·10⁻¹³** | ✔ |
+| M0, 20 k values (0.05–30 W/m·K), constant power | k and α < 0.5% | k ≤ 0.0002%, α ≤ 0.001% | ✔ |
+| M0, same 20 k values, constant current (real device condition) | k and α < 0.5% | k ≤ **0.003%**, α ≤ **0.019%** | ✔ |
+| pytest | clean | **65 passed** | ✔ |
 
-Tek uydurmanın süresi en fazla 0,07 s (74.000 örneklik PMMA kaydı dahil).
-Yeniden üretmek için: `python scripts/validate_m0.py`. Çıktılar: `reports/phase1/`.
+A single fit takes at most 0.07 s (including the 74,000-sample PMMA record).
+To reproduce: `python scripts/validate_m0.py`. Outputs: `reports/phase1/`.
 
-## Yapılanlar
+## What was done
 
 - `src/tpslib/dtau.py`
-  - Gustafsson D(τ), m parametreli; taşmayı önlemek için `i0e` kullanılıyor.
-  - Doğrudan (uyarlamalı kuadratür) hesap ve hızlı tablo: ln σ ızgarasında Simpson + kübik spline. Tablo 0,16 s'de bir kez kuruluyor.
-  - İdeal sıcaklık artışı iki durum için: sabit güç, ve **sabit akım** (P = I²R₀(1+α_R·ΔT), Duhamel süperpozisyonuyla çözülüyor).
+  - Gustafsson D(τ), parameterised by m; `i0e` is used to avoid overflow.
+  - Direct (adaptive quadrature) computation and a fast table: Simpson on a ln σ grid + cubic spline. The table is built once in 0.16 s.
+  - Ideal temperature rise for two cases: constant power, and **constant current** (P = I²R₀(1+α_R·ΔT), solved by Duhamel superposition).
 - `src/tpslib/fit_tps.py` (M0)
   - Model: ΔT = A·D̃(t) + B·P(t)/P₀.
-  - D̃, güç geçmişine göre ağırlıklı D'dir. Sabit güçte D̃ = D(τ) olur ve model klasik ΔT = A·D(τ) + B'ye indirgenir.
-  - Pencere 0,3 < τ² < 1. α taraması: önce kaba log tarama, sonra pencere sabitken 1B en küçükleme ve pencere güncelleme, pencere değişmeyene kadar.
-  - k = P₀ / (π^1,5·a·A).
-  - Sonuçla birlikte artık RMS, pencere, τ_max ve "pencere kesildi" uyarısı dönüyor.
-- `src/tpslib/synth_analytic.py`: test eğrileri.
-  - Gerçek k ve α ile basitleştirilmiş otomatik ayar: τ=1'de 2,5 K hedefleyen güç (8 mW–1 W'a kırpılır), τ=1'e kadar süre.
-  - Veri hızı: kayıt başına 12.000 örnek bütçesinde izin verilen en yüksek hız.
-- `configs/analysis.yaml`: D(τ) ve M0 ayarları. `device.yaml`'a örnek bütçesi eklendi.
-- Testler: `tests/test_dtau.py`, `tests/test_fit_tps.py`.
+  - D̃ is D weighted by the power history. At constant power D̃ = D(τ) and the model reduces to the classic ΔT = A·D(τ) + B.
+  - Window 0.3 < τ² < 1. α search: first a coarse log scan, then a 1D minimisation with the window fixed and a window update, until the window no longer changes.
+  - k = P₀ / (π^1.5·a·A).
+  - The result also returns the residual RMS, the window, τ_max and a "window truncated" warning.
+- `src/tpslib/synth_analytic.py`: test curves.
+  - Simplified auto-setup with the true k and α: power targeting 2.5 K at τ=1 (clipped to 8 mW–1 W), duration up to τ=1.
+  - Sample rate: the highest rate allowed by the budget of 12,000 samples per record.
+- `configs/analysis.yaml`: D(τ) and M0 settings. The sample budget was added to `device.yaml`.
+- Tests: `tests/test_dtau.py`, `tests/test_fit_tps.py`.
 
-## Önemli bulgu 1 — D(τ)'nun alt sınırı
+## Key finding 1 — Lower limit of D(τ)
 
-- D(τ) integralinin integrandı σ→0'da sabit bir değere (1/(2√π(m+1)) = 0,0134) yaklaşıyor (ln σ cinsinden). Bu yüzden integral **logaritmik olarak ıraksıyor**: sonsuz ince bir halkanın kendi üzerindeki sıcaklığı sonsuzdur (`dtau.png` sağ panel).
-- PROJECT_RULES.md'deki referans değerler tam olarak **σ_min = 10⁻⁶** alt sınırıyla elde ediliyor. Bu değer config'e yazıldı.
-- Sonuç olarak D'nin mutlak değeri σ_min'e bağlı. Bağımlılık yalnızca sabit bir terim olarak giriyor. M0'da bu terim B'ye gidiyor; k ve α bundan hiç etkilenmiyor (`test_cutoff_independent`).
-- Faz 2'ye etkisi: simülatör analitik çözümle mutlak ΔT üzerinden değil, şu iki yoldan biriyle karşılaştırılacak:
-  - sonlu iz genişliği b ile düzenlenmiş bir referans,
-  - veya k ve α'nın geri kazanımı.
-- Ayrıntı: `docs/DECISIONS.md`.
+- As σ→0 the integrand of D(τ) tends to a constant value (1/(2√π(m+1)) = 0.0134) in ln σ. The integral therefore **diverges logarithmically**: the self-temperature of an infinitely thin ring is infinite (`dtau.png`, right panel).
+- The reference values in PROJECT_RULES.md are reproduced exactly with the lower limit **σ_min = 10⁻⁶**. This value is written in the config.
+- As a result, the absolute value of D depends on σ_min. The dependence enters only as a constant term. In M0 this term goes into B; k and α are not affected at all (`test_cutoff_independent`).
+- Effect on Phase 2: the simulator will not be compared with the analytic solution through the absolute ΔT, but in one of two ways:
+  - a reference regularised by the finite trace width b,
+  - or the recovery of k and α.
+- Details: `docs/DECISIONS.md`.
 
-## Önemli bulgu 2 — Sabit akımda güç değişimi
+## Key finding 2 — Power change at constant current
 
-Cihaz sabit akımla ölçüyor; güç ısınmayla yaklaşık %1 artıyor. Bu artış yok sayılıp ortalama güç kullanılırsa (`m0_constant_current_effect.png`):
-- k **%0,66–0,73**,
-- α **%1,9–2,2**
+The device measures at constant current; the power rises by about 1% as it heats. If this rise is ignored and the mean power is used (`m0_constant_current_effect.png`):
+- k comes out **0.66–0.73%**,
+- α **1.9–2.2%**
 
-sistematik olarak düşük çıkıyor. Bu hata tek başına simülasyon hedefinin (k medyan < %1) büyük kısmını harcar. M0 bu yüzden ölçülen P(t)'yi kullanıyor; hata %0,003'e iniyor.
+systematically low. This error alone uses up most of the simulation target (k median < 1%). M0 therefore uses the measured P(t); the error drops to 0.003%.
 
-## Grafikler
+## Figures
 
-- `phase1/dtau.png`: D(τ) ve referans noktalar; σ→0 davranışı.
-- `phase1/m0_gate_errors.png`: 20 k değerinde M0'ın k ve α hatası, iki güç modunda.
-- `phase1/m0_constant_current_effect.png`: P(t) hesaba katılmazsa oluşan hata.
-- `phase1/m0_example_fit.png`: PMMA benzeri örnek; ΔT–D̃ doğrusu ve pencere içi artık (±20 µK, eğri interpolasyonundan).
-- Tablolar: `phase1/dtau_reference.csv`, `phase1/m0_gate.csv`, `phase1/summary.json`.
+- `phase1/dtau.png`: D(τ) and the reference points; behaviour as σ→0.
+- `phase1/m0_gate_errors.png`: k and α error of M0 at 20 k values, in both power modes.
+- `phase1/m0_constant_current_effect.png`: the error that appears if P(t) is not taken into account.
+- `phase1/m0_example_fit.png`: PMMA-like example; ΔT–D̃ line and the residual within the window (±20 µK, from the curve interpolation).
+- Tables: `phase1/dtau_reference.csv`, `phase1/m0_gate.csv`, `phase1/summary.json`.
 
-## Sınırlar ve sonraki adımlar
+## Limitations and next steps
 
-- M0 henüz t_c (başlangıç zamanı kayması) uydurmuyor. Faz 4'te gürültü, kayma ve t_c eklenince M0'ın < %2 kapısı orada sınanacak. Gerekirse t_c parametresi eklenecek.
-- Gerçek ölçümde B, Kapton katmanlarındaki sıcaklık farkını taşır. Erken zamanda katman ısı kapasitesinin yarattığı sapma Faz 2 simülatörüyle görülecek; pencerenin (0,3 < τ²) bu sapmayı dışarıda bırakıp bırakmadığı orada ölçülecek.
+- M0 does not fit t_c (start-time offset) yet. Once noise, drift and t_c are added in Phase 4, M0's < 2% gate will be tested there. A t_c parameter will be added if needed.
+- In a real measurement B carries the temperature difference across the Kapton layers. The early-time deviation caused by the layer heat capacity will be seen with the Phase 2 simulator; whether the window (0.3 < τ²) excludes it will be measured there.

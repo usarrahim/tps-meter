@@ -15,7 +15,7 @@
   },
   "test_accuracy": [
     {
-      "model": "M2 topluluk",
+      "model": "M2 ensemble",
       "k_band": "0.05-0.5",
       "n": 1392,
       "k_med_pct": 0.8302898134215684,
@@ -25,7 +25,7 @@
       "a_p95_pct": 2.473290479314769
     },
     {
-      "model": "M2 topluluk",
+      "model": "M2 ensemble",
       "k_band": "0.5-5.0",
       "n": 1346,
       "k_med_pct": 0.8851395115927905,
@@ -35,7 +35,7 @@
       "a_p95_pct": 6.811214299148342
     },
     {
-      "model": "M2 topluluk",
+      "model": "M2 ensemble",
       "k_band": "5.0-30.0",
       "n": 977,
       "k_med_pct": 2.072810467262884,
@@ -45,8 +45,8 @@
       "a_p95_pct": 9.323079974763054
     },
     {
-      "model": "M2 topluluk",
-      "k_band": "tümü",
+      "model": "M2 ensemble",
+      "k_band": "all",
       "n": 3715,
       "k_med_pct": 1.0060701679759063,
       "k_p95_pct": 5.853068038827067,
@@ -86,7 +86,7 @@
     },
     {
       "model": "M0",
-      "k_band": "tümü",
+      "k_band": "all",
       "n": 3715,
       "k_med_pct": 1.7109614207539758,
       "k_p95_pct": 13.465111088693412,
@@ -95,7 +95,7 @@
       "a_p95_pct": 28.458264950117112
     },
     {
-      "model": "M2 (asimetri > 10, arıza alanı)",
+      "model": "M2 (asymmetry > 10, fault domain)",
       "k_band": "0.05-0.5",
       "n": 461,
       "k_med_pct": 0.8728856739733958,
@@ -105,7 +105,7 @@
       "a_p95_pct": 2.8772028450451512
     },
     {
-      "model": "M2 (asimetri > 10, arıza alanı)",
+      "model": "M2 (asymmetry > 10, fault domain)",
       "k_band": "0.5-5.0",
       "n": 481,
       "k_med_pct": 1.3010009091179981,
@@ -115,7 +115,7 @@
       "a_p95_pct": 26.296839155043088
     },
     {
-      "model": "M2 (asimetri > 10, arıza alanı)",
+      "model": "M2 (asymmetry > 10, fault domain)",
       "k_band": "5.0-30.0",
       "n": 343,
       "k_med_pct": 13.729712314222178,
@@ -125,8 +125,8 @@
       "a_p95_pct": 24.035181945448507
     },
     {
-      "model": "M2 (asimetri > 10, arıza alanı)",
-      "k_band": "tümü",
+      "model": "M2 (asymmetry > 10, fault domain)",
+      "k_band": "all",
       "n": 1285,
       "k_med_pct": 1.5324515565875159,
       "k_p95_pct": 20.755531768262863,
@@ -139,7 +139,7 @@
     "0.05-0.5": true,
     "0.5-5.0": true,
     "5.0-30.0": false,
-    "tümü": false
+    "all": false
   },
   "m0_fail_rate_test": 0.0,
   "calibration_test": {
@@ -242,7 +242,7 @@
     "n_params": 61910,
     "accuracy": [
       {
-        "model": "kompakt (2 üye)",
+        "model": "compact (2 members)",
         "k_band": "0.05-0.5",
         "n": 1392,
         "k_med_pct": 0.8486071789541246,
@@ -252,7 +252,7 @@
         "a_p95_pct": 2.5357400796606
       },
       {
-        "model": "kompakt (2 üye)",
+        "model": "compact (2 members)",
         "k_band": "0.5-5.0",
         "n": 1346,
         "k_med_pct": 0.9223711162198157,
@@ -262,7 +262,7 @@
         "a_p95_pct": 7.078419322141083
       },
       {
-        "model": "kompakt (2 üye)",
+        "model": "compact (2 members)",
         "k_band": "5.0-30.0",
         "n": 977,
         "k_med_pct": 2.324502616114876,
@@ -272,8 +272,8 @@
         "a_p95_pct": 9.874522743411712
       },
       {
-        "model": "kompakt (2 üye)",
-        "k_band": "tümü",
+        "model": "compact (2 members)",
+        "k_band": "all",
         "n": 3715,
         "k_med_pct": 1.0764481613913826,
         "k_p95_pct": 6.1399028263407756,

@@ -86,8 +86,8 @@ def main() -> None:
     axs[1].plot(sig, _ring_sum(sig, m), color=C1, lw=2, label="σ·f(σ)")
     axs[1].set_xscale("log")
     axs[1].set_xlabel("σ")
-    axs[1].set_ylabel("ln σ cinsinden integrand")
-    axs[1].set_title("σ→0'da sabite gider: integral ln σ gibi ıraksar", color=INK, loc="left", fontsize=10)
+    axs[1].set_ylabel("integrand in ln σ")
+    axs[1].set_title("tends to a constant as σ→0: the integral diverges like ln σ", color=INK, loc="left", fontsize=10)
     axs[1].legend(frameon=False)
     style(axs[1])
     fig.tight_layout()
@@ -100,8 +100,8 @@ def main() -> None:
     rows = []
     for k, rc in zip(k_values, rho_cp):
         alpha = k / rc
-        for mode in ("sabit güç", "sabit akım"):
-            cc = mode == "sabit akım"
+        for mode in ("constant power", "constant current"):
+            cc = mode == "constant current"
             c = make_case(k, alpha, constant_current=cc)
             t0 = time.perf_counter()
             r = fit_tps(c.t, c.dT, c.P_t if cc else c.P, a, m)
@@ -131,32 +131,32 @@ def main() -> None:
     fig, axs = plt.subplots(1, 2, figsize=(10, 3.8), sharex=True)
     for ax, col, name in [(axs[0], "err_k_pct", "k"), (axs[1], "err_alpha_pct", "α")]:
         ax.axhspan(-0.5, 0.5, color="#f0efec", zorder=0)
-        for mode, c, mk in [("sabit güç", C1, "o"), ("sabit akım", C2, "s")]:
+        for mode, c, mk in [("constant power", C1, "o"), ("constant current", C2, "s")]:
             d = g[g["mode"] == mode]
             ax.plot(d.k, d[col], mk, color=c, ms=8, mec="white", mew=1, label=mode, zorder=3)
         ax.set_xscale("log")
         ax.set_ylim(-0.6, 0.6)
         ax.axhline(0, color=INK2, lw=0.8)
         ax.set_xlabel("k [W/m·K]")
-        ax.set_ylabel(f"{name} bağıl hata [%]")
-        ax.set_title(f"M0 {name} hatası (gri bant: ±%0,5 kapı)", color=INK, loc="left", fontsize=10)
+        ax.set_ylabel(f"{name} relative error [%]")
+        ax.set_title(f"M0 {name} error (grey band: ±0.5% gate)", color=INK, loc="left", fontsize=10)
         style(ax)
     axs[0].legend(frameon=False, loc="lower left")
     fig.tight_layout()
     fig.savefig(out / "m0_gate_errors.png", dpi=150)
     plt.close(fig)
 
-    d = g[g["mode"] == "sabit akım"]
+    d = g[g["mode"] == "constant current"]
     fig, axs = plt.subplots(1, 2, figsize=(10, 3.8), sharex=True)
     for ax, (good, naive, name) in zip(axs, [("err_k_pct", "err_k_naive_pct", "k"),
                                               ("err_alpha_pct", "err_alpha_naive_pct", "α")]):
-        ax.plot(d.k, d[naive], "s", color=C2, ms=8, mec="white", mew=1, label="P sabit varsayılırsa", zorder=3)
-        ax.plot(d.k, d[good], "o", color=C1, ms=8, mec="white", mew=1, label="P(t) hesaba katılırsa (M0)", zorder=3)
+        ax.plot(d.k, d[naive], "s", color=C2, ms=8, mec="white", mew=1, label="assuming constant P", zorder=3)
+        ax.plot(d.k, d[good], "o", color=C1, ms=8, mec="white", mew=1, label="with P(t) (M0)", zorder=3)
         ax.axhline(0, color=INK2, lw=0.8)
         ax.set_xscale("log")
         ax.set_xlabel("k [W/m·K]")
-        ax.set_ylabel(f"{name} bağıl hata [%]")
-        ax.set_title(f"Sabit akımda güç değişiminin {name}'ya etkisi", color=INK, loc="left", fontsize=10)
+        ax.set_ylabel(f"{name} relative error [%]")
+        ax.set_title(f"Effect of the power change under constant current on {name}", color=INK, loc="left", fontsize=10)
         style(ax)
     axs[0].legend(frameon=False)
     fig.tight_layout()
@@ -172,18 +172,18 @@ def main() -> None:
     model = r.A * Dw + r.B * hist.p_norm(c.t)
     win = (c.t >= r.t_window[0]) & (c.t <= r.t_window[1])
     fig, axs = plt.subplots(1, 2, figsize=(10, 3.8))
-    axs[0].plot(Dw, c.dT, color=INK2, lw=1, label="tüm kayıt")
-    axs[0].plot(Dw[win], c.dT[win], color=C1, lw=3, label="uydurma penceresi 0,3<τ²<1")
-    axs[0].set_xlabel("D̃(τ) (güç geçmişiyle ağırlıklı)")
+    axs[0].plot(Dw, c.dT, color=INK2, lw=1, label="full record")
+    axs[0].plot(Dw[win], c.dT[win], color=C1, lw=3, label="fit window 0.3<τ²<1")
+    axs[0].set_xlabel("D̃(τ) (weighted by the power history)")
     axs[0].set_ylabel("ΔT [K]")
-    axs[0].set_title(f"PMMA benzeri: k={k}, α=0,13 mm²/s → hata %{(r.k/k-1)*100:+.4f}",
+    axs[0].set_title(f"PMMA-like: k={k}, α=0.13 mm²/s → error {(r.k/k-1)*100:+.4f}%",
                      color=INK, loc="left", fontsize=10)
     axs[0].legend(frameon=False)
     style(axs[0])
     axs[1].plot(c.t[win], (c.dT[win] - model[win]) * 1e6, color=C1, lw=1.5)
     axs[1].set_xlabel("t [s]")
-    axs[1].set_ylabel("artık [µK]")
-    axs[1].set_title("Penceredeki artık (gürültüsüz)", color=INK, loc="left", fontsize=10)
+    axs[1].set_ylabel("residual [µK]")
+    axs[1].set_title("Residual in the window (noise-free)", color=INK, loc="left", fontsize=10)
     style(axs[1])
     fig.tight_layout()
     fig.savefig(out / "m0_example_fit.png", dpi=150)

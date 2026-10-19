@@ -1,45 +1,45 @@
-# M0+ — yeniden simülasyonlu ters çözüm ve artık kontrolü (tasarım, henüz uygulanmadı)
+# M0+ — re-simulation inversion and residual check (design, not implemented yet)
 
-Plan 9.8'in son güven kontrolü. Amaç: M2'nin tahminiyle simülatörü yeniden çalıştırıp ölçülen eğriyi gürültü düzeyinde açıklayıp açıklayamadığını görmek. Açıklayamıyorsa ölçüm veya model alanı dışında bir şey var (hava boşluğu, aşırı asimetrik temas, modellenmeyen fizik).
+The last trust check of plan 9.8. Goal: re-run the simulator with M2's estimate and see whether it explains the measured curve down to the noise level. If it does not, something lies outside the measurement or model domain (air gap, strongly asymmetric contact, unmodelled physics).
 
-Güven v2'deki kontroller (aralık, topluluk farkı, M0 farkı) özellikle **aşırı asimetrik temasta** zayıf kalıyor: M2 bu eğrilere de kendinden emin, aralık içinde bir cevap veriyor. M0+ bu boşluğu kapatmak için gerekli.
+The checks in trust v2 (range, ensemble spread, M0 difference) stay weak especially for **strongly asymmetric contact**: M2 gives a confident, in-range answer for these curves too. M0+ is needed to close this gap.
 
-## Bilinmeyenler
+## Unknowns
 
-| Parametre | Tür | Başlangıç | Nasıl çözülür |
+| Parameter | Type | Start | How it is solved |
 |---|---|---|---|
-| ln k, ln α | doğrusal olmayan | M2 tahmini | Levenberg–Marquardt (LM) |
-| ln h_c,alt, ln h_c,üst | doğrusal olmayan | M2'nin G_c'sinden simetrik bölüşüm | LM (iki ayrı parametre) |
-| B (sabit kayma + kalan doğrusal kayma eğimi) | doğrusal | — | her LM adımında en küçük karelerle kapalı çözüm (variable projection) |
-| t_c (ısıtma başlangıç kayması) | doğrusal olmayan ama ucuz | 0 | simüle eğrinin zaman ekseninde kaydırılması (spline), yeni simülasyon gerekmez |
+| ln k, ln α | nonlinear | M2 estimate | Levenberg–Marquardt (LM) |
+| ln h_c,bottom, ln h_c,top | nonlinear | symmetric split of M2's G_c | LM (two separate parameters) |
+| B (constant offset + remaining linear drift slope) | linear | — | closed-form least squares at every LM step (variable projection) |
+| t_c (heating start offset) | nonlinear but cheap | 0 | shift of the simulated curve along the time axis (spline), no new simulation needed |
 
-- İki h_c'yi ayrı bırakmak önemli: uyan h_c,maks/h_c,min oranı doğrudan "asimetri > 10" kontrolü olur.
-- Film katmanı kalınlıkları ve özellikleri prior ortalamasında sabit tutulur (gerçek cihazda bir kez kalibre edilir).
+- Keeping the two h_c separate matters: the fitted h_c,max/h_c,min ratio becomes the "asymmetry > 10" check directly.
+- Film layer thicknesses and properties are held at the prior mean (calibrated once on the real device).
 
-## Algoritma (ölçüm başına)
+## Algorithm (per measurement)
 
-1. Ön işlenmiş kayıt (`preprocess` çıktısı: t, ΔT, P) M2 ile aynı yoldan gelir.
-2. Kalıntıyı 256 log-zaman bininde hesapla (özelliklerle aynı ızgara). Her binin gürültü σ_i'si ön ölçüm taban gürültüsünden ve bin başına örnek sayısından gelir.
-3. LM: 4 doğrusal olmayan parametre, ileri farkla Jakobiyen (adım 1e-3, ln uzayında). t_c ve B her değerlendirmede iç içe çözülür.
-4. Durma: göreli χ² iyileşmesi < 1e-3 veya 8 iterasyon.
-5. Çıktılar:
-   - χ²_ν = ortalama((r_i/σ_i)²) → **artık kontrolü**, eşik val'ın %99'luk diliminden.
-   - Uyan h_c oranı → **asimetri kontrolü** (> 10 ise arıza).
-   - Uyan k, α → M0+ tahmini. M2 ile farkı da bir kontrol.
+1. The preprocessed record (`preprocess` output: t, ΔT, P) comes through the same path as for M2.
+2. Compute the residual in 256 log-time bins (same grid as the features). The noise σ_i of each bin comes from the pre-measurement noise floor and the number of samples per bin.
+3. LM: 4 nonlinear parameters, forward-difference Jacobian (step 1e-3, in ln space). t_c and B are solved inside every evaluation.
+4. Stop: relative χ² improvement < 1e-3 or 8 iterations.
+5. Outputs:
+   - χ²_ν = mean((r_i/σ_i)²) → **residual check**, threshold from the 99th percentile on val.
+   - Fitted h_c ratio → **asymmetry check** (fault if > 10).
+   - Fitted k, α → M0+ estimate. Its difference to M2 is also a check.
 
-## Süre tahmini
+## Time estimate
 
-- Tek simülasyon (Faz 2 hız ölçümü, bu dizüstü, tek süreç): 2,1–2,6 s (`reports/phase2/speed.csv`).
-- LM iterasyonu: 1 merkez + 4 Jakobiyen simülasyonu = 5 simülasyon. M2 başlangıcı iyi olduğu için 3–5 iterasyon, artı 1–2 reddedilen adım → **~20–30 simülasyon**.
-- **Ölçüm başına: tek çekirdekte ~50–75 s.** Jakobiyen 5 çekirdeğe paralel dağıtılırsa ~12–18 s duvar süresi.
-- Hızlandırma seçenekleri:
-  - Kaba ağ (yarı radyal/eksenel çözünürlük) ilk iterasyonlarda, ince ağ son iterasyonda: ~2 kat.
-  - "M0+ hafif": yalnızca M2 tahminiyle tek bir simülasyon (~2,5 s) ve χ²_ν. Hava boşluğunu yakalaması beklenir; asimetriyi yakalamaz (h_c bölüşümü bilinmiyor).
-- Cihaz kullanımı için uygun: ölçümün kendisi 5–800 s sürüyor; PC tarafında 15–75 s ek süre kabul edilebilir.
+- Single simulation (Phase 2 speed measurement, this laptop, one process): 2.1–2.7 s (`reports/phase2/speed.csv`).
+- LM iteration: 1 centre + 4 Jacobian simulations = 5 simulations. With M2's good start, 3–5 iterations plus 1–2 rejected steps → **~20–30 simulations**.
+- **Per measurement: ~50–75 s on one core.** With the Jacobian spread over 5 cores, ~12–18 s wall time.
+- Speed-up options:
+  - Coarse mesh (half radial/axial resolution) in the first iterations, fine mesh in the last: ~2×.
+  - "M0+ light": a single simulation with M2's estimate (~2.5 s) and χ²_ν. Expected to catch the air gap; it does not catch asymmetry (the h_c split is unknown).
+- Suitable for device use: the measurement itself takes 5–800 s; 15–75 s extra on the PC side is acceptable.
 
-## Doğrulama planı (Colab)
+## Validation plan (Colab)
 
-- Eşik: val'dan 500 normal ölçüm (~500 × 60 s ≈ 8 CPU-saat → 24 çekirdekte ~20 dk).
-- Etki: test_faulty'den her arıza türünden 200, test'ten 300 asimetri > 10 örneği.
-- Test setlerinin üçüncü kullanımı olacağı için önce val içinde asimetri > 10 örnekleriyle değerlendirilmeli; test yalnızca son raporda.
-- Gerçek veride ilk kullanım: PMMA ve camda χ²_ν ≈ 1 çıkıyorsa simülatör gerçek eğriyi yapı bırakmadan açıklıyor demektir (plan 9.7 sim-to-real kontrolüyle aynı test).
+- Threshold: 500 normal measurements from val (~500 × 60 s ≈ 8 CPU-hours → ~20 min on 24 cores).
+- Effect: 200 of each fault type from test_faulty, 300 asymmetry > 10 samples from test.
+- Because this would be the third use of the test sets, evaluate first within val using its asymmetry > 10 samples; test only in the final report.
+- First use on real data: if χ²_ν ≈ 1 for PMMA and glass, the simulator explains the real curve without leaving structure (the same test as the sim-to-real check in plan 9.7).

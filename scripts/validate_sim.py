@@ -41,10 +41,10 @@ NU = load_numerics()
 # Reference materials of the project plan (k [W/m/K], rho*cp [J/m^3/K]) + range ends
 MATERIALS = {
     "PMMA": (0.19, 1.46e6),
-    "Borosilikat": (1.2, 2.0e6),
-    "Paslanmaz 304": (16.0, 3.7e6),
+    "Borosilicate": (1.2, 2.0e6),
+    "Stainless steel 304": (16.0, 3.7e6),
 }
-EXTRA = {"Köpük benzeri (0,05)": (0.05, 1.0e6), "Üst sınır (30)": (30.0, 3.5e6)}
+EXTRA = {"Foam-like (0.05)": (0.05, 1.0e6), "Upper limit (30)": (30.0, 3.5e6)}
 
 
 def nominal(k, rc, **kw) -> SimParams:
@@ -87,20 +87,20 @@ def gate_analytic(out, summary):
         c, mk = SERIES[i], MARKERS[i]
         axs[1].plot(tau, e * 100, color=c, lw=2, label=name)
         if i == 0:
-            axs[0].plot(tau, an, color=INK2, lw=4, alpha=0.35, label="analitik (sonlu iz genişliği)")
-            axs[0].plot(tau, r.dT, color=c, lw=1.5, label="simülatör")
+            axs[0].plot(tau, an, color=INK2, lw=4, alpha=0.35, label="analytic (finite trace width)")
+            axs[0].plot(tau, r.dT, color=c, lw=1.5, label="simulator")
             Dshift = p.P0 / (PI15 * A * k) * dtau(tau)
             off = np.mean((an - Dshift)[win])
-            axs[0].plot(tau, Dshift + off, ":", color=SERIES[1], lw=2, label="D(τ) + sabit")
+            axs[0].plot(tau, Dshift + off, ":", color=SERIES[1], lw=2, label="D(τ) + const")
     axs[0].set_xscale("log"); axs[0].set_xlabel("τ"); axs[0].set_ylabel("ΔT [K]")
     axs[0].legend(frameon=False)
-    style(axs[0], "Analitik sınır, PMMA: katmansız, mükemmel temas, sabit güç")
+    style(axs[0], "Analytic limit, PMMA: no layers, perfect contact, constant power")
     axs[1].axhspan(-0.5, 0.5, color=BAND, zorder=0)
     axs[1].axvspan(0.1, 1.0, color="#dbe8f8", alpha=0.5, zorder=0)
     axs[1].set_xscale("log"); axs[1].set_ylim(-2, 2)
-    axs[1].set_xlabel("τ"); axs[1].set_ylabel("bağıl fark [%]")
+    axs[1].set_xlabel("τ"); axs[1].set_ylabel("relative difference [%]")
     axs[1].legend(frameon=False)
-    style(axs[1], "Simülatör / analitik − 1 (gri: ±%0,5; mavi: kapı penceresi)")
+    style(axs[1], "Simulator / analytic − 1 (grey: ±0.5%; blue: gate window)")
     save(fig, out / "gate1_analytic.png")
     d = pd.DataFrame(rows)
     d.to_csv(out / "gate1_analytic.csv", index=False)
@@ -137,12 +137,12 @@ def gate_convergence(out, summary):
             "time_base_s": r1.info["time_total_s"], "time_refined_s": r2.info["time_total_s"],
             "n_unknowns_base": r1.info["n_unknowns"], "n_unknowns_refined": r2.info["n_unknowns"],
         })
-        ax.plot(tau, c * 100, color=SERIES[i], lw=2, label=f"{name}: ağ + zaman")
-        ax.plot(tau, ct * 100, "--", color=SERIES[i], lw=1.2, label=f"{name}: yalnız zaman")
+        ax.plot(tau, c * 100, color=SERIES[i], lw=2, label=f"{name}: mesh + time")
+        ax.plot(tau, ct * 100, "--", color=SERIES[i], lw=1.2, label=f"{name}: time only")
     ax.axhspan(-0.1, 0.1, color=BAND, zorder=0)
-    ax.set_xscale("log"); ax.set_xlabel("τ"); ax.set_ylabel("değişim [%]")
+    ax.set_xscale("log"); ax.set_xlabel("τ"); ax.set_ylabel("change [%]")
     ax.legend(frameon=False, fontsize=8)
-    style(ax, "Ağ ve zaman adımı yarıya inince ΔT değişimi (gri: ±%0,1)")
+    style(ax, "ΔT change when mesh and time step are halved (grey: ±0.1%)")
     save(fig, out / "gate2_convergence.png")
     d = pd.DataFrame(rows)
     d.to_csv(out / "gate2_convergence.csv", index=False)
@@ -153,8 +153,8 @@ def gate_energy(out, summary):
     """Gate 3: energy in = stored + lost."""
     rows = []
     cases = [(n, k, rc, {}) for n, (k, rc) in MATERIALS.items()]
-    cases.append(("PMMA, düşük h_c, sabit güç", 0.19, 1.46e6, dict(h_c_bottom=500.0, h_c_top=800.0, constant_current=False)))
-    cases.append(("PMMA, ince numune 8 mm", 0.19, 1.46e6, dict(thickness_bottom=8e-3, thickness_top=8e-3)))
+    cases.append(("PMMA, low h_c, constant power", 0.19, 1.46e6, dict(h_c_bottom=500.0, h_c_top=800.0, constant_current=False)))
+    cases.append(("PMMA, thin sample 8 mm", 0.19, 1.46e6, dict(thickness_bottom=8e-3, thickness_top=8e-3)))
     for name, k, rc, kw in cases:
         p = nominal(k, rc, **kw)
         r = simulate(p)
@@ -194,9 +194,9 @@ def physics_hc(out, summary):
         axs[1].plot(hcs, ea, MARKERS[i] + "-", color=SERIES[i], ms=7, mec="white", label=name)
     for ax, lab in zip(axs, ["k", "α"]):
         ax.axhline(0, color=INK2, lw=0.8)
-        ax.set_xscale("log"); ax.set_xlabel("h_c (iki yüz) [W/m²·K]"); ax.set_ylabel(f"M0 görünür {lab} hatası [%]")
+        ax.set_xscale("log"); ax.set_xlabel("h_c (both faces) [W/m²·K]"); ax.set_ylabel(f"M0 apparent {lab} error [%]")
         ax.legend(frameon=False)
-        style(ax, f"Temas iletkenliği düştükçe görünür {lab}")
+        style(ax, f"Apparent {lab} as the contact conductance drops")
     save(fig, out / "physics_hc.png")
     d = pd.DataFrame(rows)
     d.to_csv(out / "physics_hc.csv", index=False)
@@ -209,7 +209,7 @@ def physics_thickness(out, summary):
     th = [8e-3, 12e-3, 16e-3, 20e-3, 25e-3]
     rows = []
     fig, axs = plt.subplots(1, 2, figsize=(11, 4))
-    for ax, name in zip(axs, ["PMMA", "Borosilikat"]):
+    for ax, name in zip(axs, ["PMMA", "Borosilicate"]):
         k, rc = MATERIALS[name]
         ref = simulate(nominal(k, rc, thickness_bottom=0.08, thickness_top=0.08, sample_radius=0.08))
         for i, H in enumerate(th):
@@ -228,9 +228,9 @@ def physics_thickness(out, summary):
             ax.plot(tau, dev, color=SERIES[i], lw=2, label=f"{H*1e3:.0f} mm")
         ax.axhline(0, color=INK2, lw=0.8)
         ax.axvspan(np.sqrt(0.3), 1.0, color=BAND, zorder=0)
-        ax.set_xscale("log"); ax.set_xlabel("τ"); ax.set_ylabel("ΔT sapması, 80 mm'ye göre [%]")
-        ax.legend(frameon=False, title="numune kalınlığı", fontsize=8)
-        style(ax, f"{name}: ince numunede geç zaman sapması (gri: M0 penceresi)")
+        ax.set_xscale("log"); ax.set_xlabel("τ"); ax.set_ylabel("ΔT deviation vs 80 mm [%]")
+        ax.legend(frameon=False, title="sample thickness", fontsize=8)
+        style(ax, f"{name}: late-time deviation for thin samples (grey: M0 window)")
     save(fig, out / "physics_thickness.png")
     d = pd.DataFrame(rows)
     d.to_csv(out / "physics_thickness.csv", index=False)
@@ -239,12 +239,12 @@ def physics_thickness(out, summary):
 
 def physics_layers(out, summary):
     """Early-time effect of the film and the contacts."""
-    k, rc = MATERIALS["Borosilikat"]
+    k, rc = MATERIALS["Borosilicate"]
     cases = [
-        ("film yok, mükemmel temas", dict(layers=False, h_c_bottom=np.inf, h_c_top=np.inf)),
-        ("film var, mükemmel temas", dict(h_c_bottom=np.inf, h_c_top=np.inf)),
-        ("film var, h_c = 5000", dict()),
-        ("film var, h_c = 1000", dict(h_c_bottom=1000.0, h_c_top=1000.0)),
+        ("no film, perfect contact", dict(layers=False, h_c_bottom=np.inf, h_c_top=np.inf)),
+        ("film, perfect contact", dict(h_c_bottom=np.inf, h_c_top=np.inf)),
+        ("film, h_c = 5000", dict()),
+        ("film, h_c = 1000", dict(h_c_bottom=1000.0, h_c_top=1000.0)),
     ]
     res = {}
     for name, kw in cases:
@@ -267,13 +267,13 @@ def physics_layers(out, summary):
                          "slope_dev_at_tau_0.55_pct": float(np.interp(np.sqrt(0.3), tau, slope) * 100)})
     axs[0].set_xscale("log"); axs[0].set_xlabel("τ"); axs[0].set_ylabel("ΔT [K]")
     axs[0].legend(frameon=False, fontsize=8)
-    style(axs[0], "Borosilikat, sabit güç: film ve temasın etkisi")
+    style(axs[0], "Borosilicate, constant power: effect of film and contact")
     axs[1].axhline(0, color=INK2, lw=0.8)
     axs[1].axvspan(np.sqrt(0.3), 1.0, color=BAND, zorder=0)
     axs[1].set_xscale("log"); axs[1].set_yscale("symlog", linthresh=1.0)
-    axs[1].set_xlabel("τ"); axs[1].set_ylabel("dΔT/d ln t sapması [%]")
+    axs[1].set_xlabel("τ"); axs[1].set_ylabel("dΔT/d ln t deviation [%]")
     axs[1].legend(frameon=False, fontsize=8)
-    style(axs[1], "Eğim sapması erken zamanda (gri: M0 penceresi)")
+    style(axs[1], "Slope deviation at early times (grey: M0 window)")
     save(fig, out / "physics_layers.png")
     pd.DataFrame(rows).to_csv(out / "physics_layers.csv", index=False)
     summary["physics_layers"] = {"rows": rows}
