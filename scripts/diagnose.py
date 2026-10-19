@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 
 from tpslib.config import load_yaml
-from tpslib.data.dataset import TPSDataset
+from tpslib.data.dataset import TPSDataset, effect_seed
 from tpslib.data.generate import dataset_dir
 from tpslib.eval.metrics import breakdown, calibration_floor, coverage, rel_errors, summarize
 from tpslib.eval.predict import load_run, predict
@@ -23,6 +23,7 @@ from tpslib.runtime import runs_root
 
 
 def main() -> None:
+    """Predict the split, break the errors down and write tables and a figure."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", required=True, help="run folder name under the runs root (or a path)")
     ap.add_argument("--split", default="val", choices=["val", "pilot"])
@@ -31,7 +32,7 @@ def main() -> None:
     run = Path(args.run) if Path(args.run).exists() else Path(runs_root()) / args.run
     model, norm, cfg = load_run(run)
     data = dataset_dir(load_yaml(cfg["data"]["dataset"])) / f"{args.split}.h5"
-    ds = TPSDataset(data, train=False, base_seed=2002)
+    ds = TPSDataset(data, train=False, base_seed=effect_seed(args.split))
     pred = predict(model, norm, ds, num_workers=args.num_workers)
     p = {k: v[pred["index"]] for k, v in ds.params.items()}
     err = rel_errors(pred)

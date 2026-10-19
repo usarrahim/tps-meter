@@ -20,11 +20,17 @@ import torch
 import yaml
 from torch.utils.data import DataLoader, Sampler
 
-from tpslib.data.dataset import Normalizer, TPSDataset, select_indices
-from tpslib.data.generate import _git_commit, code_hash
+from tpslib.data.dataset import Normalizer, TPSDataset, effect_seed, select_indices
+from tpslib.data.generate import code_hash, git_info
 from tpslib.models.losses import beta_nll, gaussian_nll
 from tpslib.models.resnet1d import build_model, count_parameters
 from tpslib.runtime import describe_device, get_device
+
+
+# Training augmentation seed of run `seed` = AUG_SEED_STRIDE * seed + AUG_SEED_OFFSET, so every
+# ensemble member sees different measurement effects (diversity) while staying reproducible.
+AUG_SEED_STRIDE, AUG_SEED_OFFSET = 1_000_003, 17
+DEV_SPLIT_SEED = 12345   # fixed permutation for the development-only pilot split
 
 
 class EpochSampler(Sampler):
@@ -34,6 +40,7 @@ class EpochSampler(Sampler):
         self.n, self.shuffle, self.seed, self.epoch = n, shuffle, seed, 0
 
     def set_epoch(self, epoch: int) -> None:
+        """Use the permutation and augmentation of this epoch."""
         self.epoch = epoch
 
     def __len__(self) -> int:
@@ -50,6 +57,7 @@ def _worker_init(_):
 
 
 def target_weights(cfg: dict) -> list[float]:
+    """Loss weights in the order of the model targets."""
     w = cfg["loss"]["weights"]
     return [float(w[t]) for t in cfg["model"]["targets"]]
 
@@ -120,15 +128,16 @@ def train(cfg: dict, data_dir: Path, run_dir: Path, seed: int, resume: bool = Tr
     # --- data ---------------------------------------------------------------------------------
     train_path = data_dir / (train_file or dc["train"])
     val_path = data_dir / (val_file or dc["val"])
-    aug_seed = 1_000_003 * seed + 17
+    aug_seed = AUG_SEED_STRIDE * seed + AUG_SEED_OFFSET
+    val_seed = effect_seed("val")
     tr = TPSDataset(train_path, train=True, base_seed=aug_seed)
     if dev_split is not None:          # development only: split one file into train/val parts
         n_tr = int(len(tr) * dev_split)
-        perm = np.random.default_rng(12345).permutation(tr.indices)
+        perm = np.random.default_rng(DEV_SPLIT_SEED).permutation(tr.indices)
         tr.indices = np.sort(perm[:n_tr])
-        va = TPSDataset(train_path, train=False, base_seed=2002, indices=np.sort(perm[n_tr:]))
+        va = TPSDataset(train_path, train=False, base_seed=val_seed, indices=np.sort(perm[n_tr:]))
     else:
-        va = TPSDataset(val_path, train=False, base_seed=2002)
+        va = TPSDataset(val_path, train=False, base_seed=val_seed)
     if dc.get("exclude_k_band") or dc.get("max_contact_asymmetry"):
         for ds in (tr, va):
             keep = select_indices(ds.params, exclude_k_band=dc.get("exclude_k_band"),
@@ -180,7 +189,7 @@ def train(cfg: dict, data_dir: Path, run_dir: Path, seed: int, resume: bool = Tr
     # --- run bookkeeping / resume ---------------------------------------------------------------
     (run_dir / "config.yaml").write_text(yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True), encoding="utf-8")
     info = {"seed": seed, "device": describe_device(device), "n_params": count_parameters(model),
-            "git": _git_commit(), "code_hash": code_hash(), "train_file": str(train_path),
+            "git": git_info(), "code_hash": code_hash(), "train_file": str(train_path),
             "val_file": str(val_path) if dev_split is None else f"{train_path} (dev split {dev_split})",
             "n_train": len(tr), "n_val": len(va), "amp": bool(use_amp), "amp_dtype": str(amp_dtype),
             "torch": torch.__version__, "num_workers": nw}

@@ -28,6 +28,7 @@ from tpslib.train.trainer import train
 
 
 def main() -> None:
+    """Train one run per seed (resuming unfinished runs) and print the best epochs."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/train_m2.yaml")
     ap.add_argument("--seeds", type=int, nargs="*", default=None, help="default: train.seeds from the config")

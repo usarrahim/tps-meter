@@ -26,6 +26,7 @@ from tpslib.data.prior import row, sample_split
 
 
 def main() -> None:
+    """Benchmark the given worker counts and print the fastest."""
     ncpu = os.cpu_count() or 2
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/dataset_v1.yaml")

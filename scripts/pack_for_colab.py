@@ -15,6 +15,7 @@ SKIP_PARTS = {"__pycache__", ".ipynb_checkpoints", ".pytest_cache"}
 
 
 def main() -> None:
+    """Write dist/tps-meter-code.zip."""
     out = ROOT / "dist" / "tps-meter-code.zip"
     out.parent.mkdir(exist_ok=True)
     n = 0

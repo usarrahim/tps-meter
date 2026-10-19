@@ -14,6 +14,7 @@ INK, INK2, GRID, BAND = "#0b0b0b", "#52514e", "#e4e3df", "#f0efec"
 
 
 def style(ax, title: str | None = None):
+    """Apply the report style (recessive grid and axes) and an optional left-aligned title."""
     ax.grid(True, color=GRID, lw=0.8)
     for s in ("top", "right"):
         ax.spines[s].set_visible(False)
@@ -27,6 +28,7 @@ def style(ax, title: str | None = None):
 
 
 def save(fig, path):
+    """Save a figure at 150 dpi with tight layout and close it."""
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)

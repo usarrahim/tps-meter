@@ -19,6 +19,7 @@ from tpslib.runtime import PROJECT_ROOT
 
 
 def hist(ax, x, title, xlabel, log=False, bins=40, color=SERIES[0]):
+    """Histogram helper (linear or log bins)."""
     x = np.asarray(x)
     b = np.geomspace(x.min(), x.max(), bins) if log else bins
     ax.hist(x, bins=b, color=color, edgecolor="white", linewidth=0.6)
@@ -30,6 +31,7 @@ def hist(ax, x, title, xlabel, log=False, bins=40, color=SERIES[0]):
 
 
 def main() -> None:
+    """Write the pilot figures and summary."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/dataset_v1.yaml")
     ap.add_argument("--split", default="pilot")

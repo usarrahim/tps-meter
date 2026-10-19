@@ -20,7 +20,7 @@ import pandas as pd
 
 from tpslib.config import load_sensor, load_yaml
 from tpslib.dtau import SIGMA_MIN, dtau, dtau_exact, small_sigma_slope
-from tpslib.fit_tps import _PowerHistory, fit_tps
+from tpslib.fit_tps import PowerHistory, fit_tps
 from tpslib.runtime import PROJECT_ROOT
 from tpslib.synth_analytic import make_case
 
@@ -31,6 +31,7 @@ REFERENCE = {0.1: 0.20553, 0.3: 0.35460, 0.5: 0.46487, 0.75: 0.55840, 1.0: 0.619
 
 
 def style(ax):
+    """Report axis style."""
     ax.grid(True, color=GRID, lw=0.8)
     for s in ("top", "right"):
         ax.spines[s].set_visible(False)
@@ -42,6 +43,7 @@ def style(ax):
 
 
 def main() -> None:
+    """D(tau) checks and the M0 gate; figures and CSV."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/analysis.yaml")
     ap.add_argument("--out", default="reports/phase1")
@@ -165,7 +167,7 @@ def main() -> None:
     k, alpha = 0.19, 0.13e-6
     c = make_case(k, alpha, constant_current=True)
     r = fit_tps(c.t, c.dT, c.P_t, a, m)
-    hist = _PowerHistory(c.t, c.P_t, int(cfg["m0"]["n_power_steps"]))
+    hist = PowerHistory(c.t, c.P_t, int(cfg["m0"]["n_power_steps"]))
     Dw = hist.d_weighted(c.t, r.alpha, a, m)
     model = r.A * Dw + r.B * hist.p_norm(c.t)
     win = (c.t >= r.t_window[0]) & (c.t <= r.t_window[1])

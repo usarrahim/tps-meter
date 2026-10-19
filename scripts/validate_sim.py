@@ -48,6 +48,7 @@ EXTRA = {"Köpük benzeri (0,05)": (0.05, 1.0e6), "Üst sınır (30)": (30.0, 3.
 
 
 def nominal(k, rc, **kw) -> SimParams:
+    """Nominal parameters for a material with the auto-setup power and duration."""
     P, t_end, sps = setup_power_and_rate(k, k / rc, A, M)
     base = dict(k=k, rho_cp=rc, P0=P, t_end=t_end, h_c_bottom=5000.0, h_c_top=5000.0)
     base.update(kw)
@@ -55,14 +56,17 @@ def nominal(k, rc, **kw) -> SimParams:
 
 
 def tau_of(p: SimParams, t):
+    """Dimensionless time sqrt(alpha t) / a."""
     return np.sqrt(p.alpha * t) / A
 
 
 def m0(r, p):
+    """Classic TPS fit of a simulation result."""
     return fit_tps(r.t, r.dT, r.P if p.constant_current else p.P0, A, M)
 
 
 def gate_analytic(out, summary):
+    """Gate 1: simulator vs the finite-band analytic solution."""
     rows = []
     fig, axs = plt.subplots(1, 2, figsize=(11, 4))
     for i, (name, (k, rc)) in enumerate(MATERIALS.items()):
@@ -104,6 +108,7 @@ def gate_analytic(out, summary):
 
 
 def gate_convergence(out, summary):
+    """Gate 2: change when mesh and time step are halved."""
     rows = []
     fig, ax = plt.subplots(figsize=(7, 4))
     for i, (name, (k, rc)) in enumerate(MATERIALS.items()):
@@ -145,6 +150,7 @@ def gate_convergence(out, summary):
 
 
 def gate_energy(out, summary):
+    """Gate 3: energy in = stored + lost."""
     rows = []
     cases = [(n, k, rc, {}) for n, (k, rc) in MATERIALS.items()]
     cases.append(("PMMA, düşük h_c, sabit güç", 0.19, 1.46e6, dict(h_c_bottom=500.0, h_c_top=800.0, constant_current=False)))
@@ -171,6 +177,7 @@ def gate_energy(out, summary):
 
 
 def physics_hc(out, summary):
+    """Apparent k and alpha (M0) vs contact conductance."""
     hcs = np.geomspace(500, 50000, 9)
     rows = []
     fig, axs = plt.subplots(1, 2, figsize=(11, 4))
@@ -198,6 +205,7 @@ def physics_hc(out, summary):
 
 
 def physics_thickness(out, summary):
+    """Late-time deviation of thin samples."""
     th = [8e-3, 12e-3, 16e-3, 20e-3, 25e-3]
     rows = []
     fig, axs = plt.subplots(1, 2, figsize=(11, 4))
@@ -230,6 +238,7 @@ def physics_thickness(out, summary):
 
 
 def physics_layers(out, summary):
+    """Early-time effect of the film and the contacts."""
     k, rc = MATERIALS["Borosilikat"]
     cases = [
         ("film yok, mükemmel temas", dict(layers=False, h_c_bottom=np.inf, h_c_top=np.inf)),
@@ -271,6 +280,7 @@ def physics_layers(out, summary):
 
 
 def speed(out, summary):
+    """Single-core run time per simulation."""
     rows = []
     for name, (k, rc) in {**MATERIALS, **EXTRA}.items():
         p = nominal(k, rc)
@@ -293,6 +303,7 @@ def speed(out, summary):
 
 
 def main() -> None:
+    """Run the selected validation steps and write summary.json."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="reports/phase2")
     ap.add_argument("--only", nargs="*", help="run only these steps, e.g. physics_layers")

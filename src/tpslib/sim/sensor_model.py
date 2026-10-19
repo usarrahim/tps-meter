@@ -21,6 +21,7 @@ from tpslib.sim.solver import assemble, integrate, integrate_trbdf2
 
 @dataclass
 class SimParams:
+    """Physical parameters of one simulated measurement (SI units)."""
     k: float                          # sample conductivity [W/m/K]
     rho_cp: float                     # sample volumetric heat capacity [J/m^3/K]
     P0: float                         # power at t = 0+ (I^2 R0) [W]
@@ -41,11 +42,13 @@ class SimParams:
 
     @property
     def alpha(self) -> float:
+        """Thermal diffusivity k / rho_cp [m^2/s]."""
         return self.k / self.rho_cp
 
 
 @dataclass
 class SimResult:
+    """Simulator output on the log-time grid plus energy balance and run information."""
     t: np.ndarray                     # log-time output grid [s]
     dT: np.ndarray                    # mean sensor temperature rise [K]
     P: np.ndarray                     # power [W]
@@ -56,15 +59,18 @@ class SimResult:
 
 
 def load_numerics() -> dict:
+    """Load configs/sim_numerics.yaml."""
     return load_yaml(CONFIG_DIR / "sim_numerics.yaml")
 
 
 def load_sensor_raw() -> dict:
+    """Load configs/sensor.yaml as a raw dict."""
     return load_yaml(CONFIG_DIR / "sensor.yaml")
 
 
 def simulate(p: SimParams, sensor_cfg: dict | None = None, numerics: dict | None = None,
              refine: int = 1, t_out: np.ndarray | None = None) -> SimResult:
+    """Run one simulation: mesh, assembly, time integration, output on the log grid."""
     t0 = time.perf_counter()
     sc = sensor_cfg or load_sensor_raw()
     nu = numerics or load_numerics()

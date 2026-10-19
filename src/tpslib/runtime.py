@@ -42,6 +42,7 @@ def describe_device(device) -> str:
 
 
 def is_colab() -> bool:
+    """True when running inside Google Colab."""
     return "google.colab" in sys.modules or "COLAB_RELEASE_TAG" in os.environ
 
 

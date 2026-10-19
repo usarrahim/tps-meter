@@ -126,6 +126,7 @@ def z_faces(H: float, dz0: float, g_near: float, z_split: float, g_far: float) -
 
 @dataclass
 class Layer:
+    """One lumped film layer: thickness and per-column conductivity / heat capacity."""
     name: str
     thickness: float        # [m]
     k: np.ndarray           # [W/m/K] per film column
@@ -135,16 +136,19 @@ class Layer:
 
 @dataclass
 class SampleMesh:
+    """Axial mesh of one sample (distance from the sensor plane)."""
     z_faces: np.ndarray     # distance from the sensor plane
     n_near: int             # z cells in the near zone (fine columns); the rest use coarse columns
 
     @property
     def dz(self) -> np.ndarray:
+        """Axial cell sizes [m]."""
         return np.diff(self.z_faces)
 
 
 @dataclass
 class Mesh:
+    """Complete mesh: fine and coarse radial faces, both samples and the film layers."""
     r_faces: np.ndarray         # fine radial faces (nr+1,)
     r_faces_coarse: np.ndarray  # coarse radial faces, a subset of r_faces
     trace_ring: np.ndarray      # (nr,) ring index 0..m-1 for trace columns, -1 elsewhere
@@ -155,10 +159,12 @@ class Mesh:
 
     @property
     def nr(self) -> int:
+        """Number of fine columns."""
         return self.r_faces.size - 1
 
     @property
     def r_c(self) -> np.ndarray:
+        """Fine column centres [m]."""
         return 0.5 * (self.r_faces[:-1] + self.r_faces[1:])
 
     @property
@@ -168,12 +174,9 @@ class Mesh:
 
     @property
     def is_trace(self) -> np.ndarray:
+        """True for fine columns that lie on a copper trace."""
         return self.trace_ring >= 0
 
-    @property
-    def fine_to_coarse(self) -> np.ndarray:
-        """Coarse column index of every fine column."""
-        return np.searchsorted(self.r_faces_coarse, self.r_c) - 1
 
 
 def build_mesh(sensor_cfg: dict, numerics: dict, sample_radius: float, thickness_bottom: float,

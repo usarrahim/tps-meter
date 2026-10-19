@@ -27,7 +27,14 @@ except ImportError:  # pragma: no cover - torch is a project dependency
     torch, Dataset = None, object
 
 
+def effect_seed(split: str, dataset_cfg: dict | None = None) -> int:
+    """Seed of the fixed measurement effects used when evaluating `split` (dataset config)."""
+    cfg = dataset_cfg or load_yaml(CONFIG_DIR / "dataset_v1.yaml")
+    return int(cfg["effect_seeds"][split])
+
+
 def load_params(path: Path) -> dict[str, np.ndarray]:
+    """All parameter arrays of a dataset file (one entry per sample)."""
     with h5py.File(path, "r") as f:
         return {k: f["params"][k][()] for k in f["params"]}
 
@@ -40,6 +47,7 @@ def contact_asymmetry(params: dict) -> np.ndarray:
 
 def select_indices(params: dict, exclude_k_band=None, only_ok: np.ndarray | None = None,
                    max_contact_asymmetry: float | None = None) -> np.ndarray:
+    """Sample indices passing the optional filters (k band removal, contact asymmetry, sim ok flag)."""
     keep = np.ones(params["k"].shape[0], bool)
     if max_contact_asymmetry is not None:
         keep &= contact_asymmetry(params) <= float(max_contact_asymmetry)
@@ -52,6 +60,7 @@ def select_indices(params: dict, exclude_k_band=None, only_ok: np.ndarray | None
 
 
 class TPSDataset(Dataset):
+    """Clean curves -> measurement effects -> preprocessing -> features; items are (seq, scalars, targets)."""
     def __init__(self, path, train: bool, base_seed: int, indices=None, normalizer=None, effects=True):
         self.path = Path(path)
         self.train = train
@@ -73,12 +82,14 @@ class TPSDataset(Dataset):
         return state
 
     def set_epoch(self, epoch: int) -> None:
+        """Select the epoch whose measurement effects are drawn (training only)."""
         self.epoch = int(epoch)
 
     def __len__(self) -> int:
         return int(self.indices.size)
 
     def row(self, i: int) -> dict:
+        """Parameters of file sample i as plain Python scalars."""
         return {k: v[i].item() for k, v in self.params.items()}
 
     def processed(self, j: int):
@@ -134,6 +145,7 @@ class Normalizer:
 
     @classmethod
     def fit(cls, ds: TPSDataset, n: int = 5000, seed: int = 0) -> "Normalizer":
+        """Fit the statistics on up to n random items of a TRAINING dataset."""
         if not ds.train:
             raise ValueError("normalisation statistics must come from the training split")
         rng = np.random.default_rng(seed)
@@ -150,18 +162,21 @@ class Normalizer:
                    fitted_on=str(ds.path.name), n_samples=int(pick.size))
 
     def apply(self, seq, scal, y):
+        """Normalise one item (sequence channels, scalars, targets)."""
         seq = (seq - self.seq_mean[:, None]) / self.seq_std[:, None]
         scal = (scal - self.scal_mean) / self.scal_std
         y = (y - self.y_mean) / self.y_std
         return seq.astype(np.float32), scal.astype(np.float32), y.astype(np.float32)
 
     def save(self, path) -> None:
+        """Write the statistics (and channel/scalar/target names) to JSON."""
         d = {k: (v.tolist() if isinstance(v, np.ndarray) else v) for k, v in self.__dict__.items()}
         d.update({"channels": CHANNELS, "scalars": SCALARS, "targets": TARGETS})
         Path(path).write_text(json.dumps(d, indent=2), encoding="utf-8")
 
     @classmethod
     def load(cls, path) -> "Normalizer":
+        """Read statistics written by `save`."""
         d = json.loads(Path(path).read_text(encoding="utf-8"))
         for k in ("channels", "scalars", "targets"):
             d.pop(k, None)

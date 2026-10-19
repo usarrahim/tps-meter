@@ -29,6 +29,7 @@ _CFG = load_yaml(CONFIG_DIR / "analysis.yaml")["m0"]
 
 @dataclass
 class M0Result:
+    """Result of the classic TPS fit: k, alpha and the fitted line dT = A Dw + B P/P0."""
     k: float                 # [W/m/K]
     alpha: float             # [m^2/s]
     A: float                 # [K]
@@ -43,6 +44,7 @@ class M0Result:
     converged: bool
 
     def as_dict(self) -> dict:
+        """Plain dict (JSON friendly)."""
         return asdict(self)
 
 
@@ -57,7 +59,7 @@ def _log_bins(t, y, n_bins, weights=None):
     return tb[keep] / cnt[keep], yb[keep] / cnt[keep], cnt[keep]
 
 
-class _PowerHistory:
+class PowerHistory:
     """Piecewise-constant power history: step j of height dP_j switches on at ts_j."""
 
     def __init__(self, t, P, n_steps):
@@ -131,7 +133,7 @@ def fit_tps(
     min_bins = int(_CFG["min_window_bins"])
 
     tb, yb, wb = _log_bins(t, dT, int(_CFG["n_bins"]))
-    hist = _PowerHistory(t, P, int(_CFG["n_power_steps"]))
+    hist = PowerHistory(t, P, int(_CFG["n_power_steps"]))
     pn = hist.p_norm(tb)
 
     def window(alpha):

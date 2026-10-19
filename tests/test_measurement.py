@@ -12,26 +12,15 @@ from tpslib.dtau import PI15, dtau, ideal_rise_constant_current
 from tpslib.fit_tps import fit_tps
 from tpslib.measurement.acquisition import acquire
 from tpslib.measurement.preprocess import preprocess
-from tpslib.synth_analytic import setup_power_and_rate
+from tpslib.synth_analytic import clean_record_case
 
 S = load_sensor()
 A, M = S.outer_radius, S.n_rings
 DEVICE = load_yaml(CONFIG_DIR / "device.yaml")
 
 
-def analytic_case(k, rho_cp=2.0e6, n_grid=1500, **extra):
-    """Clean constant-current analytic curve + a prior-like parameter row."""
-    alpha = k / rho_cp
-    P, t_end, sps = setup_power_and_rate(k, alpha, A, M)
-    I = np.sqrt(P / S.R0)
-    t = np.geomspace(0.25 / sps, t_end, n_grid)
-    dT, _ = ideal_rise_constant_current(t, k, alpha, A, I, S.R0, S.alpha_R, M)
-    prm = {"k": k, "alpha": alpha, "P0": P, "sps": sps, "t_end": t_end,
-           "current_range": 0 if I <= DEVICE["current_ranges"]["L"]["I_max"] else 1,
-           "alpha_R_calib_rel": 0.0, "radius_calib_rel": 0.0, "thickness_entered": 0.02,
-           "sample_radius": 0.025, "drift_jump_K": 0.0, "drift_jump_t_frac": 0.0, "G_c": 5000.0}
-    prm.update(extra)
-    return t, dT, prm
+# Kept under this name for the other test modules that import it.
+analytic_case = clean_record_case
 
 
 def test_noiseless_chain_is_exact_inverse():

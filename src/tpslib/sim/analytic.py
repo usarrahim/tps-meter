@@ -19,6 +19,7 @@ from scipy.special import erf, j1
 
 
 def band_weight(lam: np.ndarray, radii: np.ndarray, b: float) -> np.ndarray:
+    """W(lambda): Hankel transform of the band indicator (r J1(lambda r) / lambda between band edges)."""
     lam = np.asarray(lam, dtype=float)
     out = np.zeros_like(lam)
     small = lam < 1e-12

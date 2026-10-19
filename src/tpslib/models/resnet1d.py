@@ -11,6 +11,7 @@ from torch import nn
 
 
 class ResBlock(nn.Module):
+    """Two 1D convolutions with batch norm and GELU plus a (projected) skip connection."""
     def __init__(self, c_in: int, c_out: int, k: int, stride: int):
         super().__init__()
         p = k // 2
@@ -29,6 +30,7 @@ class ResBlock(nn.Module):
 
 
 class ResNet1D(nn.Module):
+    """M2 network: features (B, C, L) and scalars (B, S) -> mean and log-variance per target."""
     def __init__(self, in_channels: int = 3, n_scalars: int = 7, channels=(32, 64, 128, 128),
                  kernel_size: int = 5, head_hidden: int = 128, n_targets: int = 3,
                  logvar_bounds=(-14.0, 4.0)):
@@ -56,6 +58,7 @@ class ResNet1D(nn.Module):
 
 
 def build_model(cfg: dict) -> ResNet1D:
+    """Construct the network described by the `model` section of a training config."""
     m = cfg["model"]
     if m["name"] != "resnet1d":
         raise ValueError(f"unknown model {m['name']!r}")
@@ -66,4 +69,5 @@ def build_model(cfg: dict) -> ResNet1D:
 
 
 def count_parameters(model: nn.Module) -> int:
+    """Number of trainable parameters."""
     return sum(p.numel() for p in model.parameters() if p.requires_grad)

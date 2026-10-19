@@ -27,6 +27,7 @@ from tpslib.config import CONFIG_DIR, load_yaml
 
 @dataclass
 class RawRecord:
+    """One measurement in the device's raw format (shared by real and synthetic data)."""
     t: np.ndarray            # sample times after the heating command [s] (device clock)
     ratio: np.ndarray        # ADC1: R_sensor / R_ref
     R_ref: float             # nominal reference resistor of the active range [ohm]

@@ -15,6 +15,7 @@ def rel_errors(pred: dict) -> dict[str, np.ndarray]:
 
 
 def summarize(err: np.ndarray) -> dict:
+    """Median, 95th percentile and median signed value of a relative-error array, in percent."""
     a = np.abs(err)
     return {"n": int(a.size), "med_pct": float(np.median(a) * 100) if a.size else np.nan,
             "p95_pct": float(np.percentile(a, 95) * 100) if a.size else np.nan,
@@ -22,6 +23,7 @@ def summarize(err: np.ndarray) -> dict:
 
 
 def coverage(pred: dict, i: int = 0, z: float = 1.96) -> float:
+    """Fraction of targets inside mean +- z std (z = 1.96 for the 95 % interval)."""
     return float(np.mean(np.abs(pred["mean"][:, i] - pred["true"][:, i]) <= z * pred["std"][:, i]))
 
 

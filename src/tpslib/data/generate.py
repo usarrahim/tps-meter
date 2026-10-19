@@ -119,6 +119,7 @@ def _copy_atomic(src: Path, dst: Path) -> None:
 
 
 def merge_shards(shard_paths: list[Path], out: Path, attrs: dict) -> None:
+    """Concatenate shard files into one HDF5 file (written atomically)."""
     tmp = out.with_suffix(".tmp")
     with h5py.File(tmp, "w") as fo:
         first = True
@@ -144,7 +145,8 @@ def merge_shards(shard_paths: list[Path], out: Path, attrs: dict) -> None:
     os.replace(tmp, out)
 
 
-def _git_commit() -> dict:
+def git_info() -> dict:
+    """Current git commit and whether src/configs/scripts have uncommitted changes."""
     try:
         sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, capture_output=True, text=True)
         dirty = subprocess.run(["git", "status", "--porcelain", "src", "configs", "scripts"], cwd=PROJECT_ROOT,
@@ -253,12 +255,13 @@ def run_split(name: str, n: int, seed: int, out_dir: Path, workers: int, shard_s
 
 
 def update_manifest(out_dir: Path, dataset_cfg: dict, split: str, stats: dict) -> None:
+    """Record configs, code version and the statistics of a finished split in manifest.json."""
     path = out_dir / "manifest.json"
     man = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
     man.update({
         "dataset_version": dataset_cfg.get("version"),
         "updated": _dt.datetime.now().isoformat(timespec="seconds"),
-        "git": _git_commit(),
+        "git": git_info(),
         "code_hash": code_hash(),
         "configs": _config_snapshot(["sensor", "device", "sim_numerics", "prior_v1", "dataset_v1"]),
         "note": "Clean curves only; measurement effects are applied at training time (PROJECT_RULES.md).",
@@ -268,4 +271,5 @@ def update_manifest(out_dir: Path, dataset_cfg: dict, split: str, stats: dict) -
 
 
 def dataset_dir(dataset_cfg: dict) -> Path:
+    """Directory of a dataset version under the data root (TPS_DATA_ROOT or ./data)."""
     return data_root() / dataset_cfg["output_dir"]

@@ -16,6 +16,7 @@ from torch import nn
 
 
 class EnsembleWithNorm(nn.Module):
+    """Ensemble members with their normalisers in one module (the ONNX export unit)."""
     def __init__(self, models: list[nn.Module], normalizers: list):
         super().__init__()
         self.members = nn.ModuleList(models)
@@ -26,6 +27,7 @@ class EnsembleWithNorm(nn.Module):
             self.register_buffer(f"ym{i}", f(nm.y_mean)); self.register_buffer(f"ys{i}", f(nm.y_std))
 
     def forward(self, seq, scalars):
+        """Raw features -> mixture mean and std in ln units, plus the member means."""
         mus, vars_ = [], []
         for i, m in enumerate(self.members):
             b = lambda n: getattr(self, f"{n}{i}")
@@ -40,6 +42,7 @@ class EnsembleWithNorm(nn.Module):
 
 
 def export_onnx(model: EnsembleWithNorm, path: Path, n_channels: int, n_scalars: int, length: int = 256) -> Path:
+    """Export to ONNX (opset 17, dynamic batch size); returns the file path."""
     model = model.cpu().eval()
     seq = torch.randn(2, n_channels, length)
     sc = torch.randn(2, n_scalars)

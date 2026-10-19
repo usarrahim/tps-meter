@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 import time
 from pathlib import Path
 
@@ -24,9 +23,7 @@ from tpslib.fit_tps import fit_tps
 from tpslib.measurement.acquisition import acquire
 from tpslib.measurement.preprocess import preprocess
 from tpslib.runtime import PROJECT_ROOT
-
-sys.path.insert(0, str(PROJECT_ROOT / "tests"))
-from test_measurement import analytic_case  # noqa: E402  (same analytic cases as the gate test)
+from tpslib.synth_analytic import clean_record_case as analytic_case
 
 S = load_sensor()
 A, M = S.outer_radius, S.n_rings
@@ -35,6 +32,7 @@ CH_LABEL = {"theta_rel": "θ / θ_ref", "dtheta_dlnt_rel": "dθ/d ln t / θ_ref"
 
 
 def realisations(ds: TPSDataset, out: Path):
+    """Five noisy realisations of one clean curve and their feature channels (low and high k)."""
     picks = {}
     k = ds.params["k"]
     for name, target in [("düşük k", 0.2), ("yüksek k", 15.0)]:
@@ -69,6 +67,7 @@ def realisations(ds: TPSDataset, out: Path):
 
 
 def normalised(ds: TPSDataset, out: Path) -> Normalizer:
+    """Fit the normaliser on the given file and plot the normalised distributions."""
     nm = Normalizer.fit(ds, n=len(ds), seed=0)
     nm.save(out / "normalizer_pilot.json")
     seqs, scals, ys = [], [], []
@@ -97,6 +96,7 @@ def normalised(ds: TPSDataset, out: Path) -> Normalizer:
 
 
 def m0_gate(out: Path) -> dict:
+    """Phase 4 gate: M0 on noisy ideal curves for 20 k values."""
     ks = np.geomspace(0.05, 30.0, 20)
     rows = []
     for k in ks:
@@ -135,6 +135,7 @@ def m0_gate(out: Path) -> dict:
 
 
 def sensitivity(out: Path) -> None:
+    """M0 error caused by each measurement effect alone."""
     rows = []
     for k in [0.05, 0.19, 1.2, 16.0]:
         rc = float(np.interp(np.log(k), np.log([0.05, 30]), [1.0e6, 4.0e6]))
@@ -151,6 +152,7 @@ def sensitivity(out: Path) -> None:
 
 
 def timing(ds: TPSDataset) -> dict:
+    """Feature computation time per sample."""
     t0 = time.perf_counter()
     n = min(200, len(ds))
     for j in range(n):
@@ -162,6 +164,7 @@ def timing(ds: TPSDataset) -> dict:
 
 
 def main() -> None:
+    """Write the Phase 4 figures and summary."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default="data/synthetic/v1/pilot.h5")
     ap.add_argument("--out", default="reports/phase4")

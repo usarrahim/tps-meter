@@ -23,6 +23,7 @@ from tpslib.data.generate import dataset_dir, run_split, update_manifest
 
 
 def main() -> None:
+    """Generate the requested splits (resumable) and update the manifest."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/dataset_v1.yaml")
     ap.add_argument("--splits", nargs="+", required=True)

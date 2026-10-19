@@ -55,6 +55,7 @@ def _to_centers(ym, ltm, cnt, centers):
 
 
 def make_features(proc: Processed, cfg: dict = _CFG) -> dict:
+    """Model inputs of one preprocessed record: seq (3, 256), scalars (7,), plus the grid and raw theta."""
     edges, centers = time_grid(proc.t_end, cfg)
     dT_m, lt_m, cnt = _bin(proc.t, proc.dT, edges)
     P_m, _, _ = _bin(proc.t, proc.P, edges)
@@ -75,4 +76,5 @@ def make_features(proc: Processed, cfg: dict = _CFG) -> dict:
 
 
 def targets(prm: dict) -> np.ndarray:
+    """Regression targets (ln k, ln alpha, ln G_c) of a parameter row."""
     return np.array([np.log(prm["k"]), np.log(prm["alpha"]), np.log(prm["G_c"])], dtype=np.float32)

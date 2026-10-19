@@ -27,6 +27,7 @@ from tpslib.sim.geometry import Mesh
 
 @dataclass
 class System:
+    """Assembled linear system: conductances, capacities, ambient losses, source and readout weights."""
     K: sp.csc_matrix
     C: np.ndarray           # [J/K]
     g_amb: np.ndarray       # conductance to ambient per unknown [W/K] (already in K's diagonal)
@@ -45,11 +46,13 @@ class _Builder:
         self.n = 0
 
     def alloc(self, count: int) -> int:
+        """Reserve `count` consecutive unknowns; returns the first index."""
         off = self.n
         self.n += count
         return off
 
     def link(self, i, j, G):
+        """Add symmetric conductances G between unknowns i and j (vectorised; G <= 0 is ignored)."""
         i, j = np.atleast_1d(i), np.atleast_1d(j)
         G = np.broadcast_to(np.asarray(G, dtype=float), i.shape).ravel()
         i, j = i.ravel(), j.ravel()
@@ -98,6 +101,7 @@ def _block(bld: _Builder, C: list, g_amb: list, rf: np.ndarray, dz: np.ndarray, 
 
 def assemble(mesh: Mesh, k_bot: float, rc_bot: float, k_top: float, rc_top: float,
              h_bot: float, h_top: float, h_conv: float, k_air: float) -> System:
+    """Build the finite-volume system for a mesh and the sample / contact properties."""
     bld = _Builder()
     C_parts, amb_parts = [], []
     rf, rfc, A = mesh.r_faces, mesh.r_faces_coarse, mesh.annulus
@@ -179,6 +183,7 @@ def assemble(mesh: Mesh, k_bot: float, rc_bot: float, k_top: float, rc_top: floa
 
 @dataclass
 class Integration:
+    """Time-integration result at the integrator's own step times."""
     t: np.ndarray           # step times [s]
     Tbar: np.ndarray        # sensor reading at step times [K]
     P: np.ndarray           # power at step times [W]

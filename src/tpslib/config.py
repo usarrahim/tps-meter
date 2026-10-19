@@ -51,6 +51,7 @@ def _check_range(name: str, value: float, lo: float, hi: float) -> float:
 
 @dataclass(frozen=True)
 class SensorConfig:
+    """Sensor geometry and electrical constants from configs/sensor.yaml (SI units)."""
     n_rings: int
     outer_radius: float      # [m]
     trace_width: float       # [m]
@@ -61,6 +62,7 @@ class SensorConfig:
 
     @classmethod
     def from_dict(cls, d: dict) -> "SensorConfig":
+        """Build from the raw YAML dict; rejects values outside plausible SI ranges (unit mistakes)."""
         if d.get("units") != "SI":
             raise ValueError("sensor config must declare units: SI")
         s, e = d["spiral"], d["electrical"]
@@ -82,4 +84,5 @@ class SensorConfig:
 
 
 def load_sensor(path: str | Path = CONFIG_DIR / "sensor.yaml") -> SensorConfig:
+    """Load and validate configs/sensor.yaml."""
     return SensorConfig.from_dict(load_yaml(path))

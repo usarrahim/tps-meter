@@ -12,20 +12,23 @@ import os
 import numpy as np
 
 _DS = None
+_M = None
 
 
 def _init(path, base_seed, indices):
-    global _DS
+    global _DS, _M
     os.environ.setdefault("OMP_NUM_THREADS", "1")
     from tpslib.data.dataset import TPSDataset
+    from tpslib.config import load_sensor
     _DS = TPSDataset(path, train=False, base_seed=base_seed, indices=indices)
+    _M = load_sensor().n_rings
 
 
 def _fit(j):
     from tpslib.fit_tps import fit_tps
     proc, prm = _DS.processed(j)
     try:
-        r = fit_tps(proc.t, proc.dT, proc.P, proc.a, 20)
+        r = fit_tps(proc.t, proc.dT, proc.P, proc.a, _M)
         return j, r.k, r.alpha, r.residual_rms, float(np.mean(proc.dT[-50:])), 1
     except Exception:  # noqa: BLE001 - a failed classic fit is itself a result
         return j, np.nan, np.nan, np.nan, float(np.mean(proc.dT[-50:])), 0

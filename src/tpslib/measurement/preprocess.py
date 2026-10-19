@@ -20,6 +20,7 @@ from tpslib.measurement.acquisition import RawRecord
 
 @dataclass
 class Processed:
+    """Preprocessed record: dT(t), P(t) and the metadata the features need."""
     t: np.ndarray        # [s]
     dT: np.ndarray       # mean sensor temperature rise [K]
     P: np.ndarray        # heating power [W]
@@ -31,14 +32,17 @@ class Processed:
 
     @property
     def t_end(self) -> float:
+        """Last sample time [s]."""
         return float(self.t[-1])
 
     @property
     def P0(self) -> float:
+        """Power at the first sample [W]."""
         return float(self.P[0])
 
 
 def preprocess(rec: RawRecord) -> Processed:
+    """Raw record -> dT(t), P(t) (steps in the module docstring)."""
     R = rec.ratio * rec.R_ref
     dT = (R / rec.R0 - 1.0) / rec.alpha_R
     dT = dT - rec.drift_slope * rec.t

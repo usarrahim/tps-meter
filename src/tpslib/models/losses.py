@@ -16,6 +16,7 @@ def gaussian_nll(mean: torch.Tensor, logvar: torch.Tensor, y: torch.Tensor) -> t
 
 
 def beta_nll(mean, logvar, y, beta: float = 0.5, weights=None) -> torch.Tensor:
+    """Weighted beta-NLL averaged over the batch (see the module docstring)."""
     nll = gaussian_nll(mean, logvar, y)
     if beta > 0:
         nll = nll * torch.exp(beta * logvar).detach()
