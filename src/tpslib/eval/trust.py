@@ -11,7 +11,9 @@ v2 adds:
   epistemic_<t>  ensemble spread of every target t (ln k, ln alpha, ln G_c)
   range_<t>      predicted t outside the range the model produces on normal (val) measurements; this is
                  the "is the predicted G_c inside the training range" check of plan 9.8
-v1 thresholds are per-check val quantiles (Phase 6). v2 thresholds use one shared tail fraction for all
+v3 adds:
+  m0plus_chi2    chi2_nu of a re-simulation at the M2 estimate (eval.m0plus.m0plus_light)
+v1 thresholds are per-check val quantiles (Phase 6). v2/v3 thresholds use one shared tail fraction for all
 continuous checks, chosen by bisection so that the combined false-alarm rate on val equals a budget.
 Thresholds and scales come from the VALIDATION split only; the test splits are never used here.
 """
@@ -67,7 +69,8 @@ def flags(scores: dict, thr: dict, dT_range=(0.5, 8.0)) -> dict[str, np.ndarray]
 # --- v2: range checks, spread of every target, shared false-alarm budget -------------------------------
 
 def _upper_scores(cfg: dict) -> list[str]:
-    return ["total_std", "m0_m2", "m0_resid", *[f"epistemic_{t}" for t in cfg["epistemic_targets"]]]
+    return ["total_std", "m0_m2", "m0_resid", *[f"epistemic_{t}" for t in cfg["epistemic_targets"]],
+            *cfg.get("extra_upper", [])]
 
 
 def thresholds_at_tail(scores_val: dict, tail: float, cfg: dict) -> dict:
@@ -93,10 +96,14 @@ def flags_v2(scores: dict, thr: dict, dT_range=(0.5, 8.0)) -> dict[str, np.ndarr
     return f
 
 
-def fit_thresholds_v2(scores_val: dict, cfg: dict | None = None, dT_range=None) -> dict:
-    """Largest shared tail fraction whose combined val false-alarm rate stays within the budget."""
+def fit_thresholds_v2(scores_val: dict, cfg: dict | None = None, dT_range=None, version: str = "v2") -> dict:
+    """Largest shared tail fraction whose combined val false-alarm rate stays within the budget.
+
+    `version` picks the config section: "v2" (output-based checks) or "v3" (v2 + the M0+ re-simulation
+    check, same mechanism with one more upper check).
+    """
     cfg = cfg or load_trust_config()
-    v2 = cfg["v2"]
+    v2 = cfg[version]
     dT_range = dT_range or cfg["dT_range_K"]
     budget = float(v2["false_alarm_budget"])
     rate = lambda tail: float(flags_v2(scores_val, thresholds_at_tail(scores_val, tail, v2), dT_range)["any"].mean())

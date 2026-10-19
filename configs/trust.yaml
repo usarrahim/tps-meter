@@ -18,6 +18,15 @@ v2:
   epistemic_targets: [ln_k, ln_alpha, ln_G_c]
   tail_search: [1.0e-5, 0.5]    # bisection bracket of the shared tail fraction
 
+v3:
+  # v2 + the M0+ re-simulation check (configs/m0plus.yaml): chi2_nu of the simulator at the M2 estimate.
+  # Same shared tail fraction and false-alarm budget as v2.
+  false_alarm_budget: 0.05
+  range_targets: [ln_k, ln_alpha, ln_G_c]
+  epistemic_targets: [ln_k, ln_alpha, ln_G_c]
+  extra_upper: [m0plus_chi2]
+  tail_search: [1.0e-5, 0.5]
+
 variance_scale:
   # Post-hoc std multiplier per target, fitted on val so the central intervals at these nominal levels
   # have the nominal coverage (geometric mean of the per-level ratios).

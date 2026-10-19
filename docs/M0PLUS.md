@@ -1,4 +1,6 @@
-# M0+ — re-simulation inversion and residual check (design, not implemented yet)
+# M0+ — re-simulation inversion and residual check
+
+> **Status (2026-10-19): implemented** (`src/tpslib/eval/m0plus.py`, `scripts/run_m0plus.py`). Results and the changes made against this design (calibration scale and t_c in the linear part, five-split screening instead of a single simulation) are in [`reports/m0plus.md`](../reports/m0plus.md). Main finding: asymmetric contact cannot be detected from a single measurement; see the report. The design below is kept as written.
 
 The last trust check of plan 9.8. Goal: re-run the simulator with M2's estimate and see whether it explains the measured curve down to the noise level. If it does not, something lies outside the measurement or model domain (air gap, strongly asymmetric contact, unmodelled physics).
 

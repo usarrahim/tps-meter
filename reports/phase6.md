@@ -70,6 +70,7 @@ After Phase 6, new checks were added on the outputs of the frozen M2 v1. Code: `
 - Range seen on val (SI): k 0.0514–28.9 W/m·K, α 1.33e-8–2.19e-5 m²/s, G_c 1,090–13,900 W/m²·K.
 - **What is left unflagged is harder:** the 229 faulty measurements that v2 does not flag have a median k error of −28% (v1: 429 unflagged, −14%). These are mostly air gaps with a G_c just inside the val range.
 - **Asymmetric contact is still not caught (5%).** As expected, output-based checks cannot see it; M0+ (separate h_c fit) remains necessary before real measurements.
+- **Update (M0+ implemented, [`m0plus.md`](m0plus.md)):** the re-simulation confirms that a symmetric contact with a lower k explains these curves equally well; asymmetric contact is not identifiable from a single measurement and must be handled by the procedure.
 
 **Variance scale** (fitted on val; multiplies the predicted std):
 

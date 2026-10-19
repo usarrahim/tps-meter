@@ -93,3 +93,9 @@
 - Variance scale from val: ln k × 0.898, ln α × 0.589, ln G_c × 0.974; test coverage after scaling 69/95%, 71/93%, 68/96%.
 - Unflagged faulty measurements: 229, median k error −28%. Asymmetric contact still needs M0+.
 - Phase 6 figures (English) copied from Drive into `reports/phase6/`; trust v2 figures into `reports/phase6_trust/`.
+
+## M0+ and closing the base model — 2026-10-19
+
+- `eval/m0plus.py`: full inversion (`fit_m0plus`: ln k, ln α, both contacts; linear part: calibration scale, t_c, offset, drift) and screening (`m0plus_light`: 5 contact splits at M2's estimate). `scripts/run_m0plus.py`: trust v3 evaluation (resumable). `configs/m0plus.yaml`, trust v3 in `configs/trust.yaml`. Tests: `tests/test_m0plus.py`.
+- Pilot development run (1,000 + 48 faulty, no test use): faults give χ²_ν 30–300× normal; asymmetric contact is not separable (see `reports/m0plus.md`).
+- Decision: trust v2 stays shipped; M0+ kept as a tool; asymmetric contact to be handled by the measurement procedure. Repository tagged `v1.0-base`.

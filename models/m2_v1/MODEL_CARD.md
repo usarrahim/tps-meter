@@ -105,10 +105,7 @@ These results are the **second use** of the test sets (the first was Phase 6). T
 
 1. **Simulation only.** Noise, drift, t_c, electronic drift and the real contact distribution of the real device were modelled with placeholder values. When real data arrive, `device.yaml` will be updated and the model retrained, with data v2 generated if needed (plan 9.7).
 2. **High k (> 5 W/m·K) is the hardest region.** Power clips at 1 W and most of the measured temperature rise comes from the sensor's own layers and the contact. The p95 error in this band is ~10%.
-3. **Poor and asymmetric contact is not caught well enough.** With trust v2, 26% of the air-gap measurements and 95% of the strongly asymmetric contacts are still not flagged; in these unflagged faulty measurements k comes out ~28% low. The G_c range check (plan 9.8) is now in place; one check is still missing:
-   - the re-simulation residual with the estimated parameters (M0+)
-
-   Until it is added, a low k result should not be used without a contact check.
+3. **Poor and asymmetric contact is not caught well enough.** With trust v2, 26% of the air-gap measurements and 95% of the strongly asymmetric contacts are still not flagged; in these unflagged faulty measurements k comes out ~28% low. The G_c range check (plan 9.8) is in place, and the re-simulation (M0+, `reports/m0plus.md`) was implemented and tested: it confirms that at high k an asymmetric contact and a symmetric contact with a lower k explain the curve equally well, so **no analysis of a single measurement can detect it**. Until the procedure prevents it (flipped second measurement or a fixture with equal clamping), a high-k result should be used only with a contact check.
 4. **The α uncertainty is conservative.** The observed coverage is higher than expected. The val-fitted scale factor in trust v2 corrects this (above).
 5. **Physics not modelled:** lead heating, PETG fixture plate, anisotropy, temperature-dependent material properties, surface roughness, liquids and porous materials.
 6. **Single sensor geometry:** variant A (a = 6.4 mm, m = 20, b = 0.10 mm). Variants B/C or a different film stack need new data generation and training.

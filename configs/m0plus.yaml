@@ -1,0 +1,29 @@
+# M0+: full-physics inversion with the r-z simulator (plan 9.8 re-simulation check; design in docs/M0PLUS.md).
+# Unknowns: ln k, ln alpha, ln h_c_bottom, ln h_c_top (trust-region least squares), plus a linear part solved in
+# closed form at every evaluation: amplitude scale, heating-start offset t_c, offset, residual drift. SI units.
+units: SI
+
+fit:
+  t_min: 0.02                  # [s] bins earlier than this are not fitted (heating-start offset t_c ~ ms)
+  min_bins: 30                 # fewer populated bins -> no fit
+  sigma_rel_floor: 2.0e-4      # per-bin sigma = sqrt(sigma_white^2 / count + (floor * dT)^2)
+  scale_prior_rel: 0.012       # prior width of the amplitude scale c (alpha_R 1 %, power 0.5 %, radius 0.5 %)
+  jac_step: 1.0e-3             # forward-difference step in ln space
+  max_nfev: 10                 # residual evaluations of the optimiser (each Jacobian costs 4 more)
+  ftol: 1.0e-3                 # relative chi^2 improvement to stop
+  bounds:                      # physical box for the fitted values
+    k: [0.01, 100.0]           # [W/m/K]
+    alpha: [1.0e-9, 1.0e-4]    # [m^2/s]
+    h_c: [10.0, 1.0e6]         # [W/m^2/K]
+  # Extra starting points for the contact split, as ln(h_bottom / h_top) at fixed G_c; the best fit is
+  # kept. 0 = symmetric start from M2's G_c.
+  asym_starts: [0.0, 3.0, -3.0]
+
+checks:
+  max_contact_asymmetry: 10.0  # fitted h_max/h_min above this is a fault (same limit as the training domain)
+  # Screening (m0plus_light): contact splits ln(h_bottom/h_top) tried at M2's k, alpha and G_c, one
+  # simulation each; the smallest chi2_nu is the check score.
+  light_split_ratios: [-3.0, -1.5, 0.0, 1.5, 3.0]
+# The trust-system check (trust v3, configs/trust.yaml) uses the one-simulation screening version
+# eval.m0plus.m0plus_light on every measurement; the full inversion (fit_m0plus, ~100 simulations with three
+# contact-split starts) is the estimator for flagged measurements.

@@ -119,3 +119,10 @@ M0+ (full-physics inversion with the simulator), a trust system (probing depth, 
 
 - **Trust v2 adopted** for M2 v1 with the val-fitted thresholds and variance scale in `trust_v2.json`. The test false alarm (5.7%) is slightly above the 5% val budget; accepted as sampling spread, the budget is not re-tuned on test.
 - **M0+ stays required before real measurements:** output-based checks catch only 5% of asymmetric contacts, and the air gaps they miss carry a −28% median k error.
+
+## 2026-10-19 — M0+ implemented; trust v2 stays the shipped trust system
+
+- **Residual model:** the re-simulation needs a closed-form linear part (amplitude scale with a 1.2 % prior for the calibration errors, heating-start offset t_c, offset, residual drift). Without it χ²_ν at the true parameters is 100–4,000 at high k and the fit distorts k.
+- **Finding:** at high k an asymmetric contact and a symmetric contact with a different k explain the curve equally well (pilot: the screening flags 0–5 % of asymmetric cases; the full inversion found one false asymmetric solution with +61 % k at the same χ²_ν). Asymmetric contact must be handled by the procedure (flipped second measurement or a fixture with equal clamping and a repeatable interface), to be checked with the simulator before the fixture is fixed.
+- **Decision:** M0+ is kept as a tool (second opinion for flagged high-k measurements; sim-to-real check on real data). Trust v3 (v2 + M0+ check) is implemented but not adopted for M2 v1: on the pilot it adds little over v2 and its full evaluation costs ~5 h of Colab CPU. The test splits were not used for M0+.
+- **Base model closed:** M2 v1 + trust v2 + M0+ tool are tagged `v1.0-base`.

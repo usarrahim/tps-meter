@@ -18,6 +18,7 @@ This repository holds the device's **analysis software**:
 | Phase 3: prior, auto-setup rule, 64,000 synthetic curves | done | [phase3](reports/phase3.md) |
 | Phase 4: measurement chain, shared preprocessing, features | done | [phase4](reports/phase4.md) |
 | Phases 5–6: M2 ensemble, test evaluation, ONNX | done (base model M2 v1) | [phase5](reports/phase5.md), [phase6](reports/phase6.md), [model card](models/m2_v1/MODEL_CARD.md) |
+| M0+ re-simulation inversion; base model closed (`v1.0-base`) | done | [m0plus](reports/m0plus.md) |
 | Calibration and validation with real device data | next | — |
 
 Full write-up of the work so far: [reports/REPORT_v1.md](reports/REPORT_v1.md).

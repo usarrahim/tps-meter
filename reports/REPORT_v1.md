@@ -340,7 +340,7 @@ In faulty measurements not flagged by v1, the median k comes out 14% low. Trust 
 - A shared false-alarm budget.
 - A variance scale fitted on val.
 
-Results of v2: the range check on the predicted G_c alone flags 47% of the air gaps and raises their detection to 74%; drift jumps rise to 92% and thin samples to 99%. Asymmetric contact stays almost invisible (5%), as expected for checks that only look at the model outputs. The 229 faulty measurements that v2 still misses are the hard ones: median k error −28%. The re-simulation inversion (M0+) has been designed (`docs/M0PLUS.md`); it remains necessary for air gaps near the range limit and for asymmetric contact.
+Results of v2: the range check on the predicted G_c alone flags 47% of the air gaps and raises their detection to 74%; drift jumps rise to 92% and thin samples to 99%. Asymmetric contact stays almost invisible (5%), as expected for checks that only look at the model outputs. The 229 faulty measurements that v2 still misses are the hard ones: median k error −28%. The re-simulation inversion (M0+) was then implemented and tested on the pilot data (`reports/m0plus.md`). It sees most faults clearly, but it adds little over v2, and it confirms that asymmetric contact at high k is not identifiable from a single curve: a symmetric contact with a lower k explains it equally well. This has to be handled by the measurement procedure.
 
 ---
 
@@ -354,7 +354,7 @@ Results of v2: the range check on the predicted G_c alone flags 47% of the air g
 
 **Weaknesses and an honest assessment:**
 - **High k (5–30 W/m·K).** p95 error 10%. Power clips at 1 W and most of the signal comes from the sensor's own layers. Consistent with the plan's validated range ending at 16 W/m·K. Hardware improvements such as thinner insulation or higher power could improve this band.
-- **The trust system is not complete yet.** v2 catches 74% of air gaps and over 90% of thin samples and drift jumps, but asymmetric contact (5%) and the remaining air gaps are not caught. M0+ must be implemented before moving to real measurements.
+- **Asymmetric contact.** v2 catches 74% of air gaps and over 90% of thin samples and drift jumps, but only 5% of asymmetric contacts, and M0+ showed that no analysis of one measurement can do better. The fixture and procedure must prevent it.
 - **Measurement-chain parameters are placeholders.** Noise, drift, t_c and electronic drift will be updated with real device recordings. Because they are added during training, they can be updated by retraining **without regenerating the data**.
 - **Contact distribution assumption.** The decision "asymmetry > 10 is a fault" is a physical assumption. It will be revisited with data v2 once the real contact distribution is learned from the first measurements.
 
@@ -362,7 +362,7 @@ Results of v2: the range check on the predicted G_c alone flags 47% of the air g
 
 ## 6. Next steps
 
-1. **Trust system.** M0+ (re-simulation residual and separate contact estimates for the two faces); trust v2 is done.
+1. **Contact procedure.** M0+ is implemented (`reports/m0plus.md`): it shows that asymmetric contact cannot be detected from one measurement. Check a flipped second measurement or an equal-clamping fixture with the simulator before the fixture design is frozen.
 2. **Hardware** (plan WP1–WP4):
    - Freeze and order the sensor design.
    - Bring up the measurement chain (T1–T4).
