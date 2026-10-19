@@ -1,0 +1,11 @@
+Copyright (c) 2026 Abdurrahim and the tps-meter project team. All rights reserved.
+
+This repository and its contents (source code, configuration, documentation, reports and
+figures) are proprietary and confidential. No license is granted to use, copy, modify,
+merge, publish, distribute, sublicense or sell any part of it without prior written
+permission of the copyright holders.
+
+Trained model weights, exported models (ONNX), normalisation statistics, generated datasets
+and measurement data are not part of this repository and are not distributed.
+
+Third-party libraries used by this project remain under their own licenses.

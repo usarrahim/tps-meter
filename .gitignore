@@ -4,18 +4,34 @@ __pycache__/
 *.pyc
 *.egg-info/
 .pytest_cache/
+.ipynb_checkpoints/
 
-# Data and weights never go to git
+# Data never goes to git (generated / measured data lives on private storage)
 data/*
 !data/.gitkeep
-runs/*
-!runs/.gitkeep
 *.h5
 *.hdf5
+
+# Training runs and model artifacts are proprietary: never in git.
+# Only the model cards (documentation) are tracked.
+runs/*
+!runs/.gitkeep
+models/**
+!models/
+!models/.gitkeep
+!models/*/
+!models/*/MODEL_CARD.md
 *.pt
 *.pth
 *.onnx
-dist/
+*.ckpt
+normalizer*.json
 
-# Notebooks checkpoints
-.ipynb_checkpoints/
+# Build outputs and bundles (code packages, evaluation bundles with ONNX files)
+dist/
+*.zip
+
+# Local tooling / secrets
+.env
+.env.*
+*.key

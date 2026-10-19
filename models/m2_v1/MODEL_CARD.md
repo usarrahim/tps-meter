@@ -101,5 +101,5 @@ Eşikler doğrulama setinin %99'luk dilimlerinden belirlendi. Kullanılan kontro
 |---|---|---|
 | `m2_ensemble.onnx` | 5 üyeli topluluk + normalizasyon (7,6 MB) | hayır (Drive: `tps-meter/phase6_bundle.zip`) |
 | `m2c_compact.onnx` | 2 üyeli kompakt cihaz modeli (0,5 MB) | hayır |
-| `normalizer_v1sym_m2_seed*.json` | Üye normalizasyonları (yalnızca train'den) | evet |
+| `normalizer_v1sym_m2_seed*.json` | Üye normalizasyonları (yalnızca train'den) | hayır (model dosyası, gizli) |
 | PyTorch ağırlıkları | Drive: `tps-meter/runs/v1sym_m2_seed*/best.pt`, `v1c_m2c_seed*/best.pt` | hayır |

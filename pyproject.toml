@@ -4,9 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tpslib"
-version = "0.0.1"
+version = "1.0.0"
 description = "TPS (hot-disk) thermal conductivity simulator, synthetic data pipeline and k/alpha estimator"
 readme = "README.md"
+license = {file = "LICENSE"}
+authors = [{name = "Abdurrahim"}]
+classifiers = ["Private :: Do Not Upload", "License :: Other/Proprietary License"]
 # 3.11 locally (PROJECT_RULES.md); Colab currently ships 3.12, so both must work.
 requires-python = ">=3.11"
 dependencies = [
