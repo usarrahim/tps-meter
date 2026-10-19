@@ -85,3 +85,11 @@
 
 - Docstrings, no hard-coded constants, public helper names; full report `reports/REPORT_v1.md`.
 - The whole repository was translated to English (comments, plot labels, reports, docs, model card, notebook). Phase 1–4 figures regenerated locally with English labels; Phase 6 figures follow with the next Colab evaluation run.
+
+## Trust checks v2 (Colab results) — 2026-10-19
+
+- Colab cell 15: the full Phase 6 evaluation reproduced every number exactly (same models and seeds), now with English figures; then the `--trust-only` run (**second use** of the test sets).
+- Flagged, v1 → v2: air gap 52.8% → 74.3%, thin sample 97.9% → 99.3%, drift jump 84.9% → 92.1%, asymmetry > 10 4.2% → 5.2%; false alarm 4.7% → 5.7% on test (5.0% on val).
+- Variance scale from val: ln k × 0.898, ln α × 0.589, ln G_c × 0.974; test coverage after scaling 69/95%, 71/93%, 68/96%.
+- Unflagged faulty measurements: 229, median k error −28%. Asymmetric contact still needs M0+.
+- Phase 6 figures on Drive (`tps-meter/reports/phase6/`, `phase6_trust/`) are English; the copies in git still have Turkish labels until they are brought into the repository.

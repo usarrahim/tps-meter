@@ -93,9 +93,11 @@ The model was not retrained; only new checks were added on its outputs (`tpslib.
 
 | Metric | Value |
 |---|---|
-| Variance scale ln k / ln α / ln G_c | to be filled in after the Colab re-run |
-| Flagged: air gap / thin sample / drift jump / asymmetry > 10 | to be filled in after the Colab re-run |
-| False alarm on normal measurements | to be filled in after the Colab re-run |
+| Variance scale ln k / ln α / ln G_c | × 0.898 / × 0.589 / × 0.974 |
+| Coverage on test after scaling, 68% / 95% | ln k 69.3% / 95.1% · ln α 70.7% / 93.1% · ln G_c 67.8% / 96.0% |
+| Flagged: air gap / thin sample / drift jump / asymmetry > 10 | 74.3% / 99.3% / 92.1% / 5.2% (v1: 52.8% / 97.9% / 84.9% / 4.2%) |
+| False alarm on normal measurements | 5.7% on test (5.0% on val, budget 5%) |
+| Faulty measurements not flagged by v2 | 229 of 2,000 in test_faulty; median k error −28% |
 
 These results are the **second use** of the test sets (the first was Phase 6). The thresholds were not chosen by looking at the test set. The re-simulation check (M0+) does not exist yet; its design is in `docs/M0PLUS.md`.
 
@@ -103,11 +105,10 @@ These results are the **second use** of the test sets (the first was Phase 6). T
 
 1. **Simulation only.** Noise, drift, t_c, electronic drift and the real contact distribution of the real device were modelled with placeholder values. When real data arrive, `device.yaml` will be updated and the model retrained, with data v2 generated if needed (plan 9.7).
 2. **High k (> 5 W/m·K) is the hardest region.** Power clips at 1 W and most of the measured temperature rise comes from the sensor's own layers and the contact. The p95 error in this band is ~10%.
-3. **Poor and asymmetric contact is not caught well enough.** Half of the air-gap measurements and most strongly asymmetric contacts are not flagged. In unflagged faulty measurements k comes out ~14% low. Two checks of plan 9.8 are still missing:
-   - whether the predicted G_c lies within the training range
+3. **Poor and asymmetric contact is not caught well enough.** With trust v2, 26% of the air-gap measurements and 95% of the strongly asymmetric contacts are still not flagged; in these unflagged faulty measurements k comes out ~28% low. The G_c range check (plan 9.8) is now in place; one check is still missing:
    - the re-simulation residual with the estimated parameters (M0+)
 
-   Until these are added, a low k result should not be used without a contact check.
+   Until it is added, a low k result should not be used without a contact check.
 4. **The α uncertainty is conservative.** The observed coverage is higher than expected. The val-fitted scale factor in trust v2 corrects this (above).
 5. **Physics not modelled:** lead heating, PETG fixture plate, anisotropy, temperature-dependent material properties, surface roughness, liquids and porous materials.
 6. **Single sensor geometry:** variant A (a = 6.4 mm, m = 20, b = 0.10 mm). Variants B/C or a different film stack need new data generation and training.

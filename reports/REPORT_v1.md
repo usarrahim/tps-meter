@@ -299,7 +299,7 @@ Realistic contact domain, n = 3,715. Cells: k median / p95 error.
 
 - G_c almost ideally calibrated, k slightly conservative.
 - α clearly conservative: the reported interval is wider than the true error.
-- Trust system v2 adds a variance scale fitted on val (see 4.6).
+- Trust system v2 adds a variance scale fitted on val: ln k × 0.898, ln α × 0.589, ln G_c × 0.974. With it the test coverage becomes 69.3% / 95.1% (ln k), 70.7% / 93.1% (ln α) and 67.8% / 96.0% (ln G_c), close to nominal (test second use, see 4.6).
 
 ![Calibration](phase6/calibration.png)
 
@@ -324,11 +324,13 @@ The ensemble was exported, with its normalisations, to a single ONNX graph (7.6 
 
 | Case | Flagged (v1) | v2 |
 |---|---|---|
-| Thin sample (wrongly entered thickness) | 97.9% | run pending |
-| Drift jump | 84.9% | run pending |
-| Air gap | **52.8%** | run pending |
-| Contact asymmetry > 10 | **4.2%** | run pending |
-| False alarm on normal measurements | 4.7% | run pending |
+| Thin sample (wrongly entered thickness) | 97.9% | 99.3% |
+| Drift jump | 84.9% | 92.1% |
+| Air gap | **52.8%** | **74.3%** |
+| Contact asymmetry > 10 | **4.2%** | **5.2%** |
+| False alarm on normal measurements | 4.7% | 5.7% |
+
+The v2 column is the **second use** of the test sets; its thresholds and scale were chosen on val only (total false alarm on val 5.0%, budget 5%).
 
 ![Faulty measurements](phase6/faulty_detection.png)
 
@@ -338,7 +340,7 @@ In faulty measurements not flagged by v1, the median k comes out 14% low. Trust 
 - A shared false-alarm budget.
 - A variance scale fitted on val.
 
-The numerical results of v2 await a single evaluation run on Colab (`docs/COLAB.md`). The re-simulation inversion (M0+) has been designed (`docs/M0PLUS.md`); it is expected to be the real answer to asymmetric contact.
+Results of v2: the range check on the predicted G_c alone flags 47% of the air gaps and raises their detection to 74%; drift jumps rise to 92% and thin samples to 99%. Asymmetric contact stays almost invisible (5%), as expected for checks that only look at the model outputs. The 229 faulty measurements that v2 still misses are the hard ones: median k error −28%. The re-simulation inversion (M0+) has been designed (`docs/M0PLUS.md`); it remains necessary for air gaps near the range limit and for asymmetric contact.
 
 ---
 
@@ -352,7 +354,7 @@ The numerical results of v2 await a single evaluation run on Colab (`docs/COLAB.
 
 **Weaknesses and an honest assessment:**
 - **High k (5–30 W/m·K).** p95 error 10%. Power clips at 1 W and most of the signal comes from the sensor's own layers. Consistent with the plan's validated range ending at 16 W/m·K. Hardware improvements such as thinner insulation or higher power could improve this band.
-- **The trust system is not complete yet.** Poor and asymmetric contact is not caught well enough. Before moving to real measurements, the v2 results must be verified and M0+ implemented.
+- **The trust system is not complete yet.** v2 catches 74% of air gaps and over 90% of thin samples and drift jumps, but asymmetric contact (5%) and the remaining air gaps are not caught. M0+ must be implemented before moving to real measurements.
 - **Measurement-chain parameters are placeholders.** Noise, drift, t_c and electronic drift will be updated with real device recordings. Because they are added during training, they can be updated by retraining **without regenerating the data**.
 - **Contact distribution assumption.** The decision "asymmetry > 10 is a fault" is a physical assumption. It will be revisited with data v2 once the real contact distribution is learned from the first measurements.
 
@@ -360,7 +362,7 @@ The numerical results of v2 await a single evaluation run on Colab (`docs/COLAB.
 
 ## 6. Next steps
 
-1. **Trust system.** The v2 evaluation run, then M0+ (re-simulation residual and separate contact estimates for the two faces).
+1. **Trust system.** M0+ (re-simulation residual and separate contact estimates for the two faces); trust v2 is done.
 2. **Hardware** (plan WP1–WP4):
    - Freeze and order the sensor design.
    - Bring up the measurement chain (T1–T4).

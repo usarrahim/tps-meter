@@ -53,15 +53,33 @@ After Phase 6, new checks were added on the outputs of the frozen M2 v1. Code: `
 
 **Re-run:** `python scripts/evaluate.py --trust-only ...` (Colab cell in `docs/COLAB.md`). Outputs in `reports/phase6_trust/` (`TRUST_REPORT.md`, `summary.json`, `trust_v2.json`, figures).
 
-> **This run is the second use of the test sets.** The first use is the Phase 6 results above. The new thresholds and scales were not chosen by looking at the test set; every table in the report carries this label. The results will be added to this section when they arrive.
+> **This run is the second use of the test sets.** The first use is the Phase 6 results above. The new thresholds and scales were not chosen by looking at the test set; every table in the report carries this label.
 
-| Case | v1 (Phase 6) | v2 |
-|---|---|---|
-| Air gap | 52.8% | run pending |
-| Thin sample | 97.9% | run pending |
-| Drift jump | 84.9% | run pending |
-| Contact asymmetry > 10 | 4.2% | run pending |
-| False alarm (normal measurement) | 4.7% | run pending |
+**Results (Colab run 2026-10-19).** The full evaluation was repeated in the same session with English figures; every Phase 6 number above was reproduced exactly (same models, same seeds).
+
+| Case | n | v1 (Phase 6) | v2 |
+|---|---|---|---|
+| Air gap | 670 | 52.8% | **74.3%** |
+| Thin sample | 674 | 97.9% | **99.3%** |
+| Drift jump | 656 | 84.9% | **92.1%** |
+| Contact asymmetry > 10 | 1,285 | 4.2% | 5.2% |
+| False alarm (normal measurement, test) | 3,715 | 4.7% | 5.7% |
+
+- v2 thresholds: shared tail share 0.0057 per check, total false alarm on val 5.0% (budget 5%). On test the false alarm is 5.7%, slightly above the val budget; this is the normal spread between two 5,000-sample sets.
+- **The range check on G_c is what lifts the air-gap detection:** it alone flags 47% of the air-gap cases. The per-target ensemble spread (ln α) lifts the drift-jump detection. Plan targets of 90% are now met for thin sample and drift jump, not for air gap.
+- Range seen on val (SI): k 0.0514–28.9 W/m·K, α 1.33e-8–2.19e-5 m²/s, G_c 1,090–13,900 W/m²·K.
+- **What is left unflagged is harder:** the 229 faulty measurements that v2 does not flag have a median k error of −28% (v1: 429 unflagged, −14%). These are mostly air gaps with a G_c just inside the val range.
+- **Asymmetric contact is still not caught (5%).** As expected, output-based checks cannot see it; M0+ (separate h_c fit) remains necessary before real measurements.
+
+**Variance scale** (fitted on val; multiplies the predicted std):
+
+| Target | Scale | test 68% raw → scaled | test 95% raw → scaled |
+|---|---|---|---|
+| ln k | 0.898 | 74.7% → 69.3% | 97.0% → 95.1% |
+| ln α | 0.589 | 89.3% → 70.7% | 99.3% → 93.1% |
+| ln G_c | 0.974 | 69.1% → 67.8% | 96.4% → 96.0% |
+
+With the scale all three targets are close to nominal coverage on test; the ln α interval shrinks by 41%. The ONNX graph is unchanged; the scale is in `trust_v2.json` and is applied as `std × scale` on the user side.
 
 ## Findings carried over from Phase 5
 

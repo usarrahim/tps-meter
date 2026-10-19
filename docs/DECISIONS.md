@@ -114,3 +114,8 @@ M0+ (full-physics inversion with the simulator), a trust system (probing depth, 
 
 - **Everything in the repository is English** (user request): code comments, docstrings, plot labels, reports, model card, docs, notebook and PROJECT_RULES.md. The earlier PROJECT_RULES.md rule ("reports in Turkish") was changed accordingly. The chat with the user stays in Turkish. The main report was renamed `reports/RAPOR_v1.md` → `reports/REPORT_v1.md`.
 - Figures of Phases 1–4 were regenerated locally with English labels (same seeds, same numbers). Phase 6 figures need the Colab data; they are regenerated with the next Colab evaluation run.
+
+## 2026-10-19 — Trust v2 results
+
+- **Trust v2 adopted** for M2 v1 with the val-fitted thresholds and variance scale in `trust_v2.json`. The test false alarm (5.7%) is slightly above the 5% val budget; accepted as sampling spread, the budget is not re-tuned on test.
+- **M0+ stays required before real measurements:** output-based checks catch only 5% of asymmetric contacts, and the air gaps they miss carry a −28% median k error.
