@@ -73,3 +73,10 @@
 - Arıza tespiti: ince numune %98, kayma sıçraması %85, hava boşluğu %53. G_c aralık kontrolü ve yeniden simülasyon (M0+) eksik.
 - Kompakt model 2 × 61.910 parametre, toplulukla fark %0,27. ONNX doğrulandı (2e-6).
 - Model kartı: `models/m2_v1/MODEL_CARD.md`. ONNX ve ağırlıklar Drive'da (git dışı).
+
+## Güven kontrolleri v2 (kod) — 2026-10-19
+
+- `eval/trust.py`: eğitim aralığı kontrolü (ln k, ln α, ln G_c), her hedef için topluluk farkı, ortak %5 yanlış alarm bütçesi, val'dan varyans ölçeği. Ayarlar `configs/trust.yaml`.
+- `scripts/evaluate.py --trust-only`: yalnızca val/test/test_faulty; v1 ile v2'yi karşılaştırır, `reports/phase6_trust/` ve `phase6_trust_bundle.zip` yazar. Test setlerinin **ikinci kullanımı** olarak etiketli.
+- M0+ tasarımı: `docs/M0PLUS.md` (ölçüm başına ~50–75 s tek çekirdek).
+- Yerelde pilot verisiyle kuru çalıştırma tamam. Gerçek sonuçlar Colab koşusundan sonra.

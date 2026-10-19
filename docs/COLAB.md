@@ -45,3 +45,33 @@ Aynı config, kod ve tohum her makinede aynı parametreleri ve aynı temiz eğri
 ## Eğitim (Faz 5)
 
 Veri Drive'dan Colab yerel diskine kopyalanıp oradan okunacak (Drive'dan doğrudan HDF5 okumak yavaş). Eğitim çıktıları doğrudan Drive'a yazılacak (`TPS_RUNS_ROOT`).
+
+## Güven kontrolleri v2 (Faz 6 sonrası)
+
+1. Bilgisayarda `python scripts/pack_for_colab.py` → `dist/tps-meter-code.zip`; Drive'daki `tps-meter/` klasöründeki eskisinin üzerine bırakın.
+2. Colab'da yeni bir defter açın (Faz 6'daki çalışma zamanı yeterli), aşağıdaki hücreyi yapıştırıp çalıştırın. Defterin son hücresi de aynısıdır.
+3. Sonunda `TRUST_REPORT.md` ekrana yazılır; bu metni gönderin. Dosyalar: `tps-meter/reports/phase6_trust/`.
+
+Bu koşu test setlerinin **ikinci kullanımıdır** (ilki Faz 6). Eşikler val'dan seçilir.
+
+```python
+# 15) Güven kontrolleri v2 + varyans ölçeği (TEST SETLERİNİN 2. KULLANIMI). Tek başına çalışır; ~10 dk.
+from google.colab import drive
+drive.mount('/content/drive')
+import os, pathlib, shutil, zipfile
+DRIVE_DIR = pathlib.Path('/content/drive/MyDrive/tps-meter')
+WORK = pathlib.Path('/content/tps-meter')
+shutil.rmtree(WORK, ignore_errors=True)
+zipfile.ZipFile(DRIVE_DIR / 'tps-meter-code.zip').extractall(WORK)
+os.chdir(WORK)
+dst = pathlib.Path('/content/data/synthetic/v1'); dst.mkdir(parents=True, exist_ok=True)
+for f in ['val.h5', 'test.h5', 'test_faulty.h5', 'manifest.json']:
+    if not (dst / f).exists():
+        shutil.copy2(DRIVE_DIR / 'data' / 'synthetic' / 'v1' / f, dst / f)
+os.environ['TPS_DATA_ROOT'] = '/content/data'
+os.environ['TPS_RUNS_ROOT'] = str(DRIVE_DIR / 'runs')
+!pip install -q -e ".[dev]"
+!python -m pytest -q tests/test_trust.py
+!python scripts/evaluate.py --trust-only --ensemble-tag v1sym --seeds 1 2 3 4 5 --max-asym 10 --num-workers {os.cpu_count()}
+print((DRIVE_DIR / 'reports' / 'phase6_trust' / 'TRUST_REPORT.md').read_text(encoding='utf-8'))
+```

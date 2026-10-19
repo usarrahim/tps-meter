@@ -101,3 +101,11 @@ M0+ (simülatörle tam fizik ters çözümü), güven sistemi (ilerleme derinli�
   - α belirsizlik ölçeğinin val'dan kalibrasyonu
 
   Bu iyileştirmeler modeli yeniden eğitmeyi gerektirmiyor; yeni eşikler val'dan seçilecek ve test setleri yalnızca bir kez, son raporda yeniden kullanılacak.
+
+## 2026-10-19 — Güven kontrolleri v2 (M2 v1 donmuş, yeniden eğitim yok)
+
+- **Aralık kontrolü:** "Eğitim aralığı" olarak eğitim etiketlerinin aralığı değil, normal **val** ölçümlerinde modelin *tahmin ettiği* ln k, ln α, ln G_c aralığı kullanılıyor. Model sınırda doyuma gittiği için etiket aralığı gerçek arızaları kaçırırdı; tahmin aralığı modelin kendi davranışıyla tutarlı.
+- **Ortak yanlış alarm bütçesi (%5):** v1'de her kontrol ayrı %99'lukla ayarlanıyordu; kontrol sayısı 5'ten 10'a çıkınca bu yanlış alarmı ikiye katlardı. v2'de tek bir kuyruk payı val'da ikiye bölme (bisection) ile bulunuyor; toplam yanlış alarm v1 ile aynı düzeyde kalıyor. Bütçe `configs/trust.yaml`'da.
+- **Varyans ölçeği:** hedef başına tek katsayı, %50/68/90/95 seviyelerindeki tam katsayıların geometrik ortalaması. Tek seviyeye göre ayarlamak kuyruğu bozabilirdi. ONNX grafiği değiştirilmedi (dondurulmuş model); katsayı `trust_v2.json`'da.
+- **Test kullanımı:** `--trust-only` koşusu test setlerinin ikinci kullanımı; raporda ve `summary.json`'da (`test_use`) açıkça yazılıyor. Model veya eşik seçimi test sonucuna göre değiştirilmeyecek.
+- **M0+:** tasarım `docs/M0PLUS.md`; iki h_c ayrı uyduruluyor ki asimetri doğrudan ölçülsün. Uygulama ayrı bir iş.

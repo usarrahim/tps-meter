@@ -40,6 +40,29 @@ Test setleri (`test`, `test_interp`, `test_faulty`) burada **bir kez** kullanıl
    - İşaretlenmeyen arızalı ölçümlerde k medyan %14 düşük.
    - Plan 9.8'deki iki kontrol henüz yok: "tahmin edilen G_c eğitim aralığında mı" ve "yeniden simülasyon artığı" (M0+). Gerçek ölçüme geçmeden önce güven sisteminin tamamlanması gerekiyor.
 
+## Ek: güven kontrolleri v2 (model yeniden eğitilmeden)
+
+Faz 6 sonrasında, donmuş M2 v1'in çıktılarına yeni kontroller eklendi. Kod: `src/tpslib/eval/trust.py`, ayarlar: `configs/trust.yaml`. **Tüm eşikler ve ölçekler yalnızca val'dan** seçiliyor.
+
+**Yeni kontroller:**
+- **Eğitim aralığı kontrolü (plan 9.8):** Tahmin edilen ln G_c, ln k ve ln α, normal val ölçümlerinde görülen aralığın dışındaysa (iki uçtan, örn. %0,5'lik dilimin altı) işaretlenir. Hava boşluğu için beklenen: gerçek G_c eğitimde hiç görülmeyen kadar düşük, modelin bunu aralığın alt ucunda ya da altında tahmin etmesi (henüz doğrulanmadı).
+- **Her hedef için topluluk farkı:** v1 yalnızca ln k'ya bakıyordu; artık ln α ve ln G_c'nin üye farkı da kontrol ediliyor.
+- **Ortak yanlış alarm bütçesi:** Kontrol sayısı arttı; yanlış alarm büyümesin diye tüm kontroller tek bir kuyruk payıyla ayarlanıyor. Val'da toplam yanlış alarm %5'i geçmiyor (v1: ~%4,7).
+- **Varyans ölçeği:** Her hedefin std'si val'dan bulunan bir katsayıyla çarpılıyor (%50/68/90/95 aralıkları nominal kapsamaya). Asıl hedef ln α'nın gereğinden geniş aralığı (%68 → %89).
+- **M0+ (yeniden simülasyon):** yalnızca tasarlandı, çalıştırılmadı: `docs/M0PLUS.md`. Ölçüm başına tahmini süre tek çekirdekte ~50–75 s. Aşırı asimetrik temasın asıl çözümü bu olacak; v2'nin bunu yeterince yakalaması beklenmiyor.
+
+**Yeniden koşu:** `python scripts/evaluate.py --trust-only ...` (Colab hücresi `docs/COLAB.md`'de). Çıktılar `reports/phase6_trust/` (`TRUST_REPORT.md`, `summary.json`, `trust_v2.json`, grafikler).
+
+> **Bu koşu test setlerinin ikinci kullanımıdır.** İlk kullanım yukarıdaki Faz 6 sonuçlarıdır. Yeni eşikler ve ölçekler test setine bakılarak seçilmedi; rapordaki her tablo bu etiketi taşıyor. Sonuçlar gelince bu bölüme eklenecek.
+
+| Durum | v1 (Faz 6) | v2 |
+|---|---|---|
+| Hava boşluğu | %52,8 | koşu bekleniyor |
+| İnce numune | %97,9 | koşu bekleniyor |
+| Kayma sıçraması | %84,9 | koşu bekleniyor |
+| Temas asimetrisi > 10 | %4,2 | koşu bekleniyor |
+| Yanlış alarm (normal ölçüm) | %4,7 | koşu bekleniyor |
+
 ## Faz 5'ten aktarılan bulgular
 
 - **Temas asimetrisi kararı.** Kullanıcı kararıyla iki yüz arasında 10 kattan büyük temas farkı arıza sayıldı. Eğitim alanı buna göre süzüldü (37.604 örnek). Bu, gerçekçi temas alanında yüksek k'nın %95'lik hatasını ~%13'ten ~%9'a, α medyanını %3,7'den %1,5'e indirdi (Faz 5 teşhisi). Gerçek temas dağılımı ilk ölçümlerden öğrenilince veri v2 ile yeniden değerlendirilecek.

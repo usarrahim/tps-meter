@@ -82,6 +82,23 @@ Eşikler doğrulama setinin %99'luk dilimlerinden belirlendi. Kullanılan kontro
 | Temas asimetrisi > 10 (eğitim alanı dışı) | **%4,2** |
 | Normal ölçüm (yanlış alarm) | %4,7 |
 
+## Güven kontrolleri (v2) ve belirsizlik ölçeği
+
+Model yeniden eğitilmedi; yalnızca çıktılarına yeni kontroller eklendi (`tpslib.eval.trust`, ayarlar `configs/trust.yaml`). Tüm eşikler ve ölçekler **yalnızca val**'dan (gerçekçi temas alanı) seçilir ve `trust_v2.json` dosyasına yazılır.
+
+- **Eğitim aralığı kontrolü (plan 9.8):** Tahmin edilen ln G_c, ln k ve ln α, normal val ölçümlerinde modelin ürettiği aralığın dışındaysa işaretlenir (iki uçtan).
+- **Her hedef için topluluk farkı:** v1 yalnızca ln k'nın üye farkına bakıyordu; v2 ln α ve ln G_c'ye de bakar.
+- **Ortak yanlış alarm bütçesi:** Kontrol sayısı arttıkça yanlış alarm büyümesin diye tüm kontroller tek bir kuyruk payıyla ayarlanır; val'da toplam yanlış alarm %5'i geçmez.
+- **Varyans ölçeği:** Her hedefin std'si val'dan bulunan bir katsayıyla çarpılır; %50, %68, %90 ve %95 aralıkları nominal kapsamaya getirilir. Faz 6'da ln α %68 aralığı %89 kapsıyordu (gereğinden geniş). ONNX çıktısı ölçeksizdir; katsayı `trust_v2.json` içindedir ve kullanıcı tarafında `std × ölçek` uygulanır.
+
+| Ölçüt | Değer |
+|---|---|
+| Varyans ölçeği ln k / ln α / ln G_c | Colab yeniden koşusundan sonra yazılacak |
+| Hava boşluğu / ince numune / kayma sıçraması / asimetri > 10 işaretlenme | Colab yeniden koşusundan sonra yazılacak |
+| Normal ölçümde yanlış alarm | Colab yeniden koşusundan sonra yazılacak |
+
+Bu sonuçlar test setlerinin **ikinci kullanımıdır** (ilki Faz 6). Eşikler test setine bakılarak seçilmedi. Yeniden simülasyon kontrolü (M0+) henüz yok; tasarımı `docs/M0PLUS.md`.
+
 ## Bilinen sınırlar
 
 1. **Yalnızca simülasyon.** Gerçek cihazın gürültüsü, kayması, t_c'si, elektronik kayması ve gerçek temas dağılımı yer tutucu değerlerle modellendi. Gerçek veri geldiğinde `device.yaml` güncellenip model yeniden eğitilecek, gerekirse veri v2 üretilecek (plan 9.7).
@@ -91,7 +108,7 @@ Eşikler doğrulama setinin %99'luk dilimlerinden belirlendi. Kullanılan kontro
    - Tahmini parametrelerle yeniden simülasyon artığı (M0+)
 
    Bunlar eklenene kadar düşük k sonucu temas kontrolü yapılmadan kullanılmamalı.
-4. **α belirsizliği temkinli.** Gerçekleşen kapsama beklenenden yüksek. Val üzerinden bir ölçek katsayısıyla daraltılabilir.
+4. **α belirsizliği temkinli.** Gerçekleşen kapsama beklenenden yüksek. Güven v2'deki val'dan bulunan ölçek katsayısı bunu düzeltir (yukarıda).
 5. **Modellenmeyen fizik:** uç (lead) ısınması, PETG fikstür plakası, anizotropi, sıcaklığa bağlı malzeme özellikleri, yüzey pürüzlülüğü, sıvılar ve gözenekli malzemeler.
 6. **Tek sensör geometrisi:** varyant A (a = 6,4 mm, m = 20, b = 0,10 mm). B/C varyantları veya farklı film yapısı için yeniden veri üretimi ve eğitim gerekir.
 
@@ -102,4 +119,5 @@ Eşikler doğrulama setinin %99'luk dilimlerinden belirlendi. Kullanılan kontro
 | `m2_ensemble.onnx` | 5 üyeli topluluk + normalizasyon (7,6 MB) | hayır (Drive: `tps-meter/phase6_bundle.zip`) |
 | `m2c_compact.onnx` | 2 üyeli kompakt cihaz modeli (0,5 MB) | hayır |
 | `normalizer_v1sym_m2_seed*.json` | Üye normalizasyonları (yalnızca train'den) | hayır (model dosyası, gizli) |
+| `trust_v2.json` | Güven v2 eşikleri ve varyans ölçeği (val'dan) | hayır (Drive: `tps-meter/phase6_trust_bundle.zip`) |
 | PyTorch ağırlıkları | Drive: `tps-meter/runs/v1sym_m2_seed*/best.pt`, `v1c_m2c_seed*/best.pt` | hayır |

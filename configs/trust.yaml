@@ -1,0 +1,24 @@
+# Trust checks of the M2 base model (plan 9.8). All thresholds are fitted on the VALIDATION split
+# (realistic-contact domain); the test splits are never used to choose them.
+units: SI
+
+dT_range_K: [0.5, 8.0]          # final temperature rise outside this range is flagged (plan 9.8)
+
+v1:
+  quantile: 0.99                # per-check val quantile (Phase 6 trust system)
+
+v2:
+  # One shared tail fraction for every continuous check, chosen on val so that the combined
+  # false-alarm rate ("any" flag) on normal val measurements equals this budget.
+  false_alarm_budget: 0.05
+  # Training-range check: predicted ln k, ln alpha, ln G_c must lie inside the val range; each side
+  # of a two-sided range gets half of the shared tail fraction.
+  range_targets: [ln_k, ln_alpha, ln_G_c]
+  # Ensemble spread (epistemic std) checks, one per target.
+  epistemic_targets: [ln_k, ln_alpha, ln_G_c]
+  tail_search: [1.0e-5, 0.5]    # bisection bracket of the shared tail fraction
+
+variance_scale:
+  # Post-hoc std multiplier per target, fitted on val so the central intervals at these nominal levels
+  # have the nominal coverage (geometric mean of the per-level ratios).
+  levels: [0.5, 0.68, 0.9, 0.95]

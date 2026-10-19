@@ -8,6 +8,11 @@ Usage (Colab):
       --compact-tag v1c --compact-seeds 1 --max-asym 10
 Writes <runs root>/../reports/phase6/ (figures, CSV, summary.json, MODEL_CARD.md, onnx/) and
 <runs root>/../phase6_bundle.zip with all of it.
+
+  python scripts/evaluate.py --trust-only ...
+Trust checks v2 and the variance scale only (val, test, test_faulty; no ablation, compact or ONNX).
+This is a SECOND use of the test splits (the first was Phase 6) and is labelled as such everywhere.
+Writes <runs root>/../reports/phase6_trust/ and <runs root>/../phase6_trust_bundle.zip.
 """
 
 from __future__ import annotations
@@ -36,13 +41,18 @@ from tpslib.eval.m0_batch import run_m0
 from tpslib.eval.metrics import K_BANDS, coverage, rel_errors, summarize
 from tpslib.eval.predict import ensemble, load_run, predict_members
 from tpslib.eval.report import BAND, INK2, MARKERS, SERIES, plt, save, style
-from tpslib.eval.trust import fit_thresholds, flags, trust_scores
+from tpslib.eval.trust import (TARGET_NAMES, fit_thresholds, fit_thresholds_v2, fit_variance_scale, flags,
+                               flags_v2, interval_coverage, load_trust_config, trust_scores)
 from tpslib.models.export import EnsembleWithNorm, export_onnx, verify_onnx
 from tpslib.models.resnet1d import count_parameters
 from tpslib.runtime import runs_root
 
 TARGET_MED, TARGET_P95 = 1.0, 4.0
+T0 = time.perf_counter()
 SPLITS = ("val", "test", "test_interp", "test_faulty")
+TRUST_SPLITS = ("val", "test", "test_faulty")
+SECOND_USE = ("İKİNCİ KULLANIM: test setleri ilk kez Faz 6'da kullanıldı. Bu koşu yalnızca val'dan seçilen "
+              "yeni güven kontrollerini ve varyans ölçeğini raporlar; model ve eşik seçimi test setine bakılarak yapılmadı.")
 
 
 def band_table(err: dict, k: np.ndarray, sel: np.ndarray, label: str) -> list[dict]:
@@ -71,14 +81,19 @@ def main() -> None:
     ap.add_argument("--num-workers", type=int, default=os.cpu_count())
     ap.add_argument("--data-dir", default=None, help="default: dataset_v1 location")
     ap.add_argument("--split-files", nargs="*", default=None, help="override, e.g. test=pilot.h5 (dry runs)")
-    ap.add_argument("--out", default=None, help="default: <runs root>/../reports/phase6")
+    ap.add_argument("--out", default=None, help="default: <runs root>/../reports/phase6[_trust]")
+    ap.add_argument("--trust-only", action="store_true",
+                    help="second use of the test splits: trust checks v2 + variance scale only")
     args = ap.parse_args()
-    t_start = time.perf_counter()
+    t_start = T0
 
     root = Path(runs_root())
-    out = Path(args.out) if args.out else root.parent / "reports" / "phase6"
+    name = "phase6_trust" if args.trust_only else "phase6"
+    out = Path(args.out) if args.out else root.parent / "reports" / name
     out.mkdir(parents=True, exist_ok=True)
-    (out / "onnx").mkdir(exist_ok=True)
+    if not args.trust_only:
+        (out / "onnx").mkdir(exist_ok=True)
+    tcfg = load_trust_config()
     runs = [root / f"{args.ensemble_tag}_m2_seed{s}" for s in args.seeds]
     loaded = [load_run(r) for r in runs]
     cfg = loaded[0][2]
@@ -91,7 +106,7 @@ def main() -> None:
 
     # --- predictions -----------------------------------------------------------------------------
     ds, ens, params, m0 = {}, {}, {}, {}
-    for split in SPLITS:
+    for split in (TRUST_SPLITS if args.trust_only else SPLITS):
         path = data_dir / files[split]
         if not path.exists():
             log(f"skip {split}: {path} missing"); continue
@@ -107,11 +122,21 @@ def main() -> None:
 
     summary = {"created": dt.datetime.now().isoformat(timespec="seconds"), "ensemble": [r.name for r in runs],
                "n_params_member": count_parameters(loaded[0][0]), "max_contact_asymmetry": args.max_asym,
-               "targets": {"k_med_pct": TARGET_MED, "k_p95_pct": TARGET_P95}}
-
-    # --- test: accuracy per k band, M2 vs M0 -----------------------------------------------------------
+               "targets": {"k_med_pct": TARGET_MED, "k_p95_pct": TARGET_P95},
+               "test_use": SECOND_USE if args.trust_only else "first (Phase 6)"}
     p, e = params["test"], ens["test"]
     dom = in_domain(p)
+    dv = in_domain(params["val"])
+
+    if args.trust_only:
+        calibration_section(ens, dv, dom, tcfg, summary, out, second_use=True)
+        if "test_faulty" in ens:
+            trust_section(ens, m0, params, dv, dom, tcfg, summary, out, second_use=True)
+        finish(summary, out, name, log)
+        write_trust_report(summary, out)
+        return
+
+    # --- test: accuracy per k band, M2 vs M0 -----------------------------------------------------------
     err, err0 = rel_errors(e), m0_errors(m0["test"], p)
     rows = band_table(err, p["k"], dom, "M2 topluluk") + band_table(err0, p["k"], dom & m0["test"]["ok"], "M0")
     rows += band_table(err, p["k"], ~dom, "M2 (asimetri > 10, arıza alanı)")
@@ -136,21 +161,7 @@ def main() -> None:
     style(axs[2], "M2 hatası – temas iletkenliği")
     save(fig, out / "test_error_scatter.png")
 
-    # --- calibration ------------------------------------------------------------------------------------
-    levels = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.68, 0.7, 0.8, 0.9, 0.95, 0.99])
-    from scipy.stats import norm
-    cal = {}
-    for i, t in enumerate(("ln_k", "ln_alpha", "ln_G_c")):
-        z = np.abs(e["mean"][dom, i] - e["true"][dom, i]) / e["std"][dom, i]
-        cal[t] = [float(np.mean(z <= norm.ppf(0.5 + lv / 2))) for lv in levels]
-    summary["calibration_test"] = {t: {"cov68": cal[t][6], "cov95": cal[t][10]} for t in cal}
-    fig, ax = plt.subplots(figsize=(5.5, 5))
-    ax.plot([0, 1], [0, 1], color=INK2, lw=1, ls="--", label="ideal")
-    for i, t in enumerate(cal):
-        ax.plot(levels, cal[t], MARKERS[i] + "-", color=SERIES[i], ms=5, label=t)
-    ax.set_xlabel("beklenen kapsama"); ax.set_ylabel("gerçekleşen kapsama"); ax.legend(frameon=False)
-    style(ax, "Belirsizlik kalibrasyonu (test, gerçekçi temas)")
-    save(fig, out / "calibration.png")
+    calibration_section(ens, dv, dom, tcfg, summary, out)
 
     # --- interpolation / ablation ---------------------------------------------------------------------
     if "test_interp" in ens and (root / args.ablation / "best.pt").exists():
@@ -174,40 +185,8 @@ def main() -> None:
         ax.legend(frameon=False); style(ax, "test_interp: k = 1,5–2,5 W/m·K bandı")
         save(fig, out / "interpolation.png")
 
-    # --- faulty measurements / trust checks --------------------------------------------------------
     if "test_faulty" in ens:
-        dv = in_domain(params["val"])
-        sub = lambda d, m: {k: v[m] for k, v in d.items()}
-        sv = trust_scores(sub(ens["val"], dv), sub(m0["val"], dv))
-        thr = fit_thresholds(sv, q=0.99)
-        ft = flags(trust_scores(ens["test"], m0["test"]), thr)
-        ff = flags(trust_scores(ens["test_faulty"], m0["test_faulty"]), thr)
-        kind = params["test_faulty"]["fault"]
-        det = {}
-        for name, code in FAULTS.items():
-            if code == 0:
-                continue
-            m = kind == code
-            if m.any():
-                det[name] = {"n": int(m.sum()), "flagged": float(ff["any"][m].mean()),
-                             **{f"by_{c}": float(ff[c][m].mean()) for c in ff if c != "any"}}
-        err_f = rel_errors(ens["test_faulty"])["k"]
-        unflag = ~ff["any"]
-        summary["faulty"] = {
-            "thresholds_from_val_q99": thr, "detection": det,
-            "false_alarm_test_in_domain": float(ft["any"][dom].mean()),
-            "flagged_test_out_of_domain_asym": float(ft["any"][~dom].mean()) if (~dom).any() else None,
-            "faulty_unflagged_k_err": summarize(err_f[unflag]) if unflag.any() else None,
-            "faulty_flagged_k_err": summarize(err_f[ff["any"]]) if ff["any"].any() else None}
-        fig, ax = plt.subplots(figsize=(8, 4.2))
-        names = list(det)
-        ax.bar([n.replace("_", " ") for n in names], [100 * det[n]["flagged"] for n in names], color=SERIES[0])
-        ax.axhline(90, color=SERIES[1], ls="--", lw=1.2, label="plan hedefi %90")
-        ax.axhline(100 * summary["faulty"]["false_alarm_test_in_domain"], color=INK2, ls=":", lw=1.2,
-                   label="normal ölçümde yanlış alarm")
-        ax.set_ylabel("işaretlenen [%]"); ax.set_ylim(0, 105); ax.legend(frameon=False)
-        style(ax, "Hatalı ölçümlerin işaretlenmesi (eşikler val'dan)")
-        save(fig, out / "faulty_detection.png")
+        trust_section(ens, m0, params, dv, dom, tcfg, summary, out)
 
     # --- compact model ----------------------------------------------------------------------------------
     comp_runs = [root / f"{args.compact_tag}_m2c_seed{s}" for s in args.compact_seeds]
@@ -235,15 +214,143 @@ def main() -> None:
     for r in runs:
         shutil.copy2(r / "normalizer.json", out / "onnx" / f"normalizer_{r.name}.json")
 
-    summary["elapsed_s"] = time.perf_counter() - t_start
+    if "trust_v2" in summary:
+        shutil.copy2(out / "trust_v2.json", out / "onnx" / "trust_v2.json")
+    write_model_card(summary, cfg, out)
+    print(acc.round(2).to_string(index=False))
+    finish(summary, out, name, log)
+
+
+def finish(summary: dict, out: Path, name: str, log) -> None:
+    summary["elapsed_s"] = time.perf_counter() - T0
     (out / "summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False, default=float),
                                       encoding="utf-8")
-    write_model_card(summary, cfg, out)
-    bundle = shutil.make_archive(str(out.parent.parent / "phase6_bundle"), "zip", out)
+    bundle = shutil.make_archive(str(out.parent.parent / f"{name}_bundle"), "zip", out)
     log(f"done -> {out}  bundle: {bundle}")
-    print(acc.round(2).to_string(index=False))
     print(json.dumps({k: summary[k] for k in summary if k not in ("test_accuracy",)}, indent=1,
-                     ensure_ascii=False, default=float)[:6000])
+                     ensure_ascii=False, default=float)[:8000])
+
+
+def calibration_section(ens: dict, dv, dom, tcfg: dict, summary: dict, out: Path, second_use=False) -> None:
+    """Coverage of the predicted intervals on test, before and after the post-hoc variance scale that is
+    fitted on val (realistic-contact domain) only."""
+    ev, e = ens["val"], ens["test"]
+    levels = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.68, 0.7, 0.8, 0.9, 0.95, 0.99])
+    i68, i95 = 6, 10
+    scale = fit_variance_scale(ev["mean"][dv], ev["std"][dv], ev["true"][dv], tcfg["variance_scale"]["levels"])
+    raw = interval_coverage(e["mean"][dom], e["std"][dom], e["true"][dom], levels)
+    cal = interval_coverage(e["mean"][dom], e["std"][dom] * scale, e["true"][dom], levels)
+    calv = interval_coverage(ev["mean"][dv], ev["std"][dv] * scale, ev["true"][dv], levels)
+    cov = lambda c: {t: {"cov68": float(c[i68, i]), "cov95": float(c[i95, i])} for i, t in enumerate(TARGET_NAMES)}
+    summary["calibration_test"] = cov(raw)
+    summary["variance_scale"] = {
+        "fitted_on": "val, contact asymmetry <= max_asym", "levels": tcfg["variance_scale"]["levels"],
+        "scale": {t: float(scale[i]) for i, t in enumerate(TARGET_NAMES)},
+        "val_scaled": cov(calv), "test_scaled": cov(cal)}
+    fig, ax = plt.subplots(figsize=(5.5, 5))
+    ax.plot([0, 1], [0, 1], color=INK2, lw=1, ls="--", label="ideal")
+    for i, t in enumerate(TARGET_NAMES):
+        ax.plot(levels, raw[:, i], MARKERS[i] + ":", color=SERIES[i], ms=4, alpha=0.6, label=f"{t} (ham)")
+        ax.plot(levels, cal[:, i], MARKERS[i] + "-", color=SERIES[i], ms=5, label=f"{t} (std × {scale[i]:.2f})")
+    ax.set_xlabel("beklenen kapsama"); ax.set_ylabel("gerçekleşen kapsama"); ax.legend(frameon=False, fontsize=8)
+    style(ax, "Belirsizlik kalibrasyonu (test" + (", 2. kullanım" if second_use else "") + "; ölçek val'dan)")
+    save(fig, out / "calibration.png")
+
+
+FAULT_LABELS = {"air_gap_low_hc": "hava boşluğu", "thin_sample": "ince numune", "drift_jump": "kayma sıçraması",
+                "contact_asymmetry_gt_max": "temas asimetrisi > 10"}
+
+
+def trust_section(ens: dict, m0: dict, params: dict, dv, dom, tcfg: dict, summary: dict, out: Path,
+                  second_use=False) -> None:
+    """Faulty-measurement detection with trust v1 (Phase 6) and v2 (range checks, spread of every target,
+    shared false-alarm budget). Thresholds from val (realistic contact) only."""
+    sub = lambda d, m: {k: v[m] for k, v in d.items()}
+    dT_range = tcfg["dT_range_K"]
+    sv = trust_scores(sub(ens["val"], dv), sub(m0["val"], dv))
+    st, sf = trust_scores(ens["test"], m0["test"]), trust_scores(ens["test_faulty"], m0["test_faulty"])
+    thr1 = fit_thresholds(sv, q=tcfg["v1"]["quantile"])
+    thr2 = fit_thresholds_v2(sv, tcfg)
+    kind = params["test_faulty"]["fault"]
+    err_f = rel_errors(ens["test_faulty"])["k"]
+    res = {}
+    for ver, fl in (("v1", lambda s: flags(s, thr1, dT_range)), ("v2", lambda s: flags_v2(s, thr2, dT_range))):
+        ft, ff = fl(st), fl(sf)
+        by = lambda f, m: {"n": int(m.sum()), "flagged": float(f["any"][m].mean()),
+                           **{f"by_{c}": float(f[c][m].mean()) for c in f if c != "any"}}
+        det = {fname: by(ff, kind == code) for fname, code in FAULTS.items() if code != 0 and (kind == code).any()}
+        if (~dom).any():
+            det["contact_asymmetry_gt_max"] = by(ft, ~dom)
+        res[ver] = {"detection": det, "false_alarm_test_in_domain": float(ft["any"][dom].mean()),
+                    "false_alarm_by_check": {c: float(ft[c][dom].mean()) for c in ft if c != "any"},
+                    "faulty_unflagged_k_err": summarize(err_f[~ff["any"]]) if (~ff["any"]).any() else None}
+    res["v1"]["thresholds"] = thr1
+    res["v2"]["thresholds"] = thr2
+    res["v2"]["range_physical"] = {t: [float(np.exp(lo)), float(np.exp(hi))] for t, (lo, hi) in thr2["range"].items()}
+    # Phase 6 keys kept for continuity
+    summary["faulty"] = {"thresholds_from_val_q99": thr1, "detection": res["v1"]["detection"],
+                         "false_alarm_test_in_domain": res["v1"]["false_alarm_test_in_domain"],
+                         "faulty_unflagged_k_err": res["v1"]["faulty_unflagged_k_err"]}
+    summary["trust_v2"] = res
+    (out / "trust_v2.json").write_text(json.dumps(
+        {"fitted_on": "val (contact asymmetry <= max_asym)", "thresholds": thr2, "dT_range_K": dT_range,
+         "variance_scale": summary.get("variance_scale", {}).get("scale"), "config": tcfg},
+        indent=2, default=float), encoding="utf-8")
+
+    names = list(res["v2"]["detection"])
+    x = np.arange(len(names) + 1)
+    fig, ax = plt.subplots(figsize=(9, 4.4))
+    for j, ver in enumerate(("v1", "v2")):
+        vals = [100 * res[ver]["detection"][n]["flagged"] for n in names] + [100 * res[ver]["false_alarm_test_in_domain"]]
+        ax.bar(x + (j - 0.5) * 0.38, vals, 0.38, color=SERIES[j], label=f"güven {ver}")
+    ax.set_xticks(x, [FAULT_LABELS.get(n, n) for n in names] + ["yanlış alarm (normal)"], fontsize=8)
+    ax.axhline(90, color=INK2, ls="--", lw=1.0, label="plan hedefi %90")
+    ax.set_ylabel("işaretlenen [%]"); ax.set_ylim(0, 105); ax.legend(frameon=False)
+    style(ax, "Hatalı ölçümlerin işaretlenmesi (eşikler val'dan" + ("; test 2. kullanım)" if second_use else ")"))
+    save(fig, out / "faulty_detection.png")
+
+
+def pct(x: float, nd: int = 1) -> str:
+    """Turkish percent string: 0.123 -> '%12,3'."""
+    return f"%{100 * x:.{nd}f}".replace(".", ",")
+
+
+def trust_lines(s: dict) -> list[str]:
+    """Turkish markdown lines: trust v1 vs v2 detection table and the variance scale."""
+    lines = []
+    if "trust_v2" in s:
+        r = s["trust_v2"]
+        thr = r["v2"]["thresholds"]
+        lines += ["| Durum | n | v1 | v2 |", "|---|---|---|---|"]
+        for n, d in r["v2"]["detection"].items():
+            lines.append(f"| {FAULT_LABELS.get(n, n)} | {d['n']} | {pct(r['v1']['detection'][n]['flagged'])} | "
+                         f"{pct(d['flagged'])} |")
+        lines += [f"| Normal ölçüm (yanlış alarm) | | {pct(r['v1']['false_alarm_test_in_domain'])} | "
+                  f"{pct(r['v2']['false_alarm_test_in_domain'])} |", "",
+                  f"v2 eşikleri: ortak kuyruk payı {thr['tail']:.4f}, val'da toplam yanlış alarm "
+                  f"{pct(thr['val_false_alarm'])} (bütçe {pct(thr['budget'], 0)}). "
+                  "Aralık kontrolü (val'da görülen tahmin aralığı, SI): "
+                  + ", ".join(f"{t[3:]} {lo:.3g}–{hi:.3g}" for t, (lo, hi) in r["v2"]["range_physical"].items()) + "."]
+        u = r["v2"]["faulty_unflagged_k_err"]
+        if u:
+            lines.append(f"v2'nin işaretlemediği arızalı ölçümlerde k hatası medyan {pct(u['med_pct'] / 100)} (n={u['n']}).")
+    if "variance_scale" in s:
+        v = s["variance_scale"]
+        lines += ["", "Varyans ölçeği (val'dan; tahmin edilen std bu katsayıyla çarpılır): "
+                  + ", ".join(f"{t} × {x:.3f}".replace(".", ",") for t, x in v["scale"].items()) + ".", "",
+                  "| Hedef | test %68 ham | test %68 ölçekli | test %95 ham | test %95 ölçekli |", "|---|---|---|---|---|"]
+        for t in v["scale"]:
+            a, b = s["calibration_test"][t], v["test_scaled"][t]
+            lines.append(f"| {t} | {pct(a['cov68'])} | {pct(b['cov68'])} | {pct(a['cov95'])} | {pct(b['cov95'])} |")
+    return lines
+
+
+def write_trust_report(s: dict, out: Path) -> None:
+    lines = ["# Güven kontrolleri v2 ve varyans ölçeği — M2 v1", "",
+             "> **Bu sonuçlar yalnızca simülasyona dayanır.**", f"> **{s['test_use']}**", "",
+             f"Oluşturma: {s['created']}. Topluluk: {', '.join(s['ensemble'])}. Model yeniden eğitilmedi.", "",
+             *trust_lines(s)]
+    (out / "TRUST_REPORT.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def write_model_card(s: dict, cfg: dict, out: Path) -> None:
@@ -293,11 +400,8 @@ def write_model_card(s: dict, cfg: dict, out: Path) -> None:
                   f"k = 1,5–2,5 W/m·K bandı eğitimden çıkarılan model bu bantta k medyan %{it['ablation_on_band']['med_pct']:.2f}, "
                   f"%95 %{it['ablation_on_band']['p95_pct']:.2f} (bandı gören model: %{it['main_on_band']['med_pct']:.2f} / "
                   f"%{it['main_on_band']['p95_pct']:.2f})."]
-    if "faulty" in s:
-        f = s["faulty"]
-        lines += ["", "## Hatalı ölçümler (güven kontrolleri, eşikler val'dan %99'luk)",
-                  *[f"- {k.replace('_', ' ')}: %{100 * v['flagged']:.1f} işaretlendi (n={v['n']})" for k, v in f["detection"].items()],
-                  f"- Normal test ölçümlerinde yanlış alarm: %{100 * f['false_alarm_test_in_domain']:.1f}"]
+    if "trust_v2" in s or "variance_scale" in s:
+        lines += ["", "## Hatalı ölçümler ve belirsizlik ölçeği (eşikler ve ölçek val'dan)", *trust_lines(s)]
     if "compact" in s:
         c = s["compact"]
         tot = [r for r in c["accuracy"] if r["k_band"] == "tümü"][0]
