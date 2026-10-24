@@ -1,0 +1,320 @@
+{
+  "dataset_version": "v1",
+  "updated": "2026-10-17T22:40:04",
+  "git": {
+    "commit": "HEAD",
+    "dirty": true
+  },
+  "code_hash": "f5f3b2d9cf305f96307e56ce781bbbff6891440b8734b5ab4cfa461b26937a29",
+  "configs": {
+    "sensor": {
+      "sha256": "32bad5b544a98e503a9955505fd24ee40e00be290db29313f9a90f1fa46a0620",
+      "content": {
+        "units": "SI",
+        "spiral": {
+          "n_rings": 20,
+          "outer_radius": 0.0064,
+          "trace_width": 0.0001,
+          "copper_thickness": 1.8e-05
+        },
+        "electrical": {
+          "R0": 4.0,
+          "alpha_R": 0.0039
+        },
+        "film": {
+          "outer_radius": 0.01,
+          "stack": [
+            {
+              "name": "polyimide_base",
+              "thickness": 2.5e-05,
+              "material": "polyimide"
+            },
+            {
+              "name": "copper_level",
+              "thickness": 1.8e-05,
+              "material": "copper",
+              "gap_material": "adhesive",
+              "heater": true
+            },
+            {
+              "name": "adhesive",
+              "thickness": 1.5e-05,
+              "material": "adhesive"
+            },
+            {
+              "name": "polyimide_cover",
+              "thickness": 1.25e-05,
+              "material": "polyimide"
+            }
+          ]
+        },
+        "materials": {
+          "copper": {
+            "k": 398.0,
+            "rho_cp": 3450000.0
+          },
+          "polyimide": {
+            "k": 0.19,
+            "rho_cp": 1580000.0
+          },
+          "adhesive": {
+            "k": 0.2,
+            "rho_cp": 1700000.0
+          },
+          "air": {
+            "k": 0.026,
+            "rho_cp": 1200.0
+          }
+        },
+        "samples": {
+          "default_radius": 0.025,
+          "default_thickness": 0.02
+        }
+      }
+    },
+    "device": {
+      "sha256": "a5b1d5685fe1949b3b51815ebbbda7abbe5b01caa927f755136403f0da2d245e",
+      "content": {
+        "units": "SI",
+        "power": {
+          "min": 0.008,
+          "max": 1.0
+        },
+        "current_ranges": {
+          "L": {
+            "I_min": 0.045,
+            "I_max": 0.188,
+            "R_ref": 20.0
+          },
+          "H": {
+            "I_min": 0.18,
+            "I_max": 0.5,
+            "R_ref": 5.0
+          }
+        },
+        "sample_rate": {
+          "min": 20,
+          "max": 1200,
+          "allowed": [
+            20,
+            50,
+            100,
+            400,
+            1200
+          ],
+          "max_samples_per_record": 12000
+        },
+        "target_temperature_rise": 2.5,
+        "noise": {
+          "adc_bits": 32,
+          "white_rms_K": 0.001,
+          "white_scales_with_sqrt_rate": true,
+          "flicker_corner_hz": 0.5,
+          "drift_linear_max": 0.0002,
+          "drift_quadratic_frac": 0.1,
+          "t0_offset_max": 0.005,
+          "power_error_rel": 0.005,
+          "electronic_drift": null
+        }
+      }
+    },
+    "sim_numerics": {
+      "sha256": "e2089cc950e37f5a68a0a4efdfcf8f3bed3bd6adb7e07c6c8440eedaaf107c94",
+      "content": {
+        "units": "SI",
+        "mesh": {
+          "n_center": 2,
+          "n_trace": 1,
+          "n_gap": 2,
+          "edge_cell": 1.5e-06,
+          "edge_growth": 1.15,
+          "trace_growth": 1.4,
+          "r_growth": 1.05,
+          "dz_min": 5e-06,
+          "z_growth": 1.25,
+          "z_split": 0.0003,
+          "coarse_dr": 0.0001,
+          "coarse_growth": 1.03,
+          "z_growth_far": 1.05
+        },
+        "time": {
+          "scheme": "trbdf2",
+          "dt0": 0.0001,
+          "dt0_fraction": 0.05,
+          "steps_per_level": 12
+        },
+        "output": {
+          "n_points": 512,
+          "t_min": 0.0005
+        },
+        "boundary": {
+          "h_convection": 10.0
+        },
+        "analytic_limit": {
+          "sample_radius": 0.08,
+          "sample_thickness": 0.08
+        }
+      }
+    },
+    "prior_v1": {
+      "sha256": "250dd034cbb9cbf3c409f9fe7d60fe5037a3cdf8035ba5ca493460c2d20dd0c5",
+      "content": {
+        "units": "SI",
+        "k": {
+          "dist": "loguniform",
+          "low": 0.05,
+          "high": 30.0
+        },
+        "rho_cp": {
+          "dist": "uniform",
+          "low": 800000.0,
+          "high": 4500000.0
+        },
+        "h_c_bottom": {
+          "dist": "loguniform",
+          "low": 500.0,
+          "high": 50000.0
+        },
+        "h_c_top": {
+          "dist": "loguniform",
+          "low": 500.0,
+          "high": 50000.0
+        },
+        "layer_thickness_rel": {
+          "dist": "uniform",
+          "low": 0.8,
+          "high": 1.2
+        },
+        "k_polyimide": {
+          "dist": "uniform",
+          "low": 0.12,
+          "high": 0.25
+        },
+        "k_adhesive": {
+          "dist": "uniform",
+          "low": 0.12,
+          "high": 0.25
+        },
+        "sample_radius": {
+          "dist": "uniform",
+          "low": 0.02,
+          "high": 0.03
+        },
+        "sample_thickness": {
+          "dist": "uniform",
+          "low": 0.008,
+          "high": 0.025
+        },
+        "alpha_R_calib_rel": {
+          "dist": "normal",
+          "mean": 0.0,
+          "std": 0.01
+        },
+        "radius_calib_rel": {
+          "dist": "normal",
+          "mean": 0.0,
+          "std": 0.005
+        },
+        "auto_setup": {
+          "probe_error_rel": 0.3,
+          "target_dT": 2.5,
+          "tau_max": 1.0,
+          "max_depth_frac": 0.9
+        },
+        "faults": {
+          "air_gap_low_hc": {
+            "weight": 1.0,
+            "h_c": {
+              "dist": "loguniform",
+              "low": 20.0,
+              "high": 300.0
+            },
+            "sides": [
+              "bottom",
+              "top",
+              "both"
+            ]
+          },
+          "thin_sample": {
+            "weight": 1.0,
+            "true_thickness": {
+              "dist": "uniform",
+              "low": 0.002,
+              "high": 0.006
+            }
+          },
+          "drift_jump": {
+            "weight": 1.0,
+            "jump_K": {
+              "dist": "uniform",
+              "low": 0.005,
+              "high": 0.05
+            }
+          }
+        }
+      }
+    },
+    "dataset_v1": {
+      "sha256": "d6334e5e62973507a181c6147846ab70d526e5c2dc987da894dd27342e28875d",
+      "content": {
+        "version": "v1",
+        "prior": "configs/prior_v1.yaml",
+        "output_dir": "synthetic/v1",
+        "shard_size": 250,
+        "pilot": {
+          "n": 1000,
+          "seed": 999
+        },
+        "splits": {
+          "train": {
+            "n": 50000,
+            "seed": 1001
+          },
+          "val": {
+            "n": 5000,
+            "seed": 2002
+          },
+          "test": {
+            "n": 5000,
+            "seed": 3003
+          },
+          "test_interp": {
+            "n": 2000,
+            "seed": 4004,
+            "k_band": [
+              1.5,
+              2.5
+            ]
+          },
+          "test_faulty": {
+            "n": 2000,
+            "seed": 5005,
+            "faults": [
+              "air_gap_low_hc",
+              "thin_sample",
+              "drift_jump"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "note": "Clean curves only; measurement effects are applied at training time (PROJECT_RULES.md).",
+  "splits": {
+    "pilot": {
+      "n": 1000,
+      "seed": 999,
+      "n_ok": 1000,
+      "n_failed": 0,
+      "wall_time_s_this_run": 692.750698399992,
+      "sim_time_mean_s": 6.894459232400346,
+      "sim_time_p95_s": 8.423073269997257,
+      "sim_time_sum_s": 6894.459232400346,
+      "workers": 10,
+      "shard_size": 250,
+      "k_band": null,
+      "faulty": false,
+      "finished": "2026-10-17T22:40:04"
+    }
+  }
+}

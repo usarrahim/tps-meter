@@ -1,0 +1,55 @@
+name: m2
+data:
+  dataset: configs/dataset_v1.yaml
+  train: train.h5
+  val: val.h5
+  exclude_k_band: null
+  max_train: null
+  normalizer_samples: 5000
+model:
+  name: resnet1d
+  in_channels: 3
+  n_scalars: 7
+  channels:
+  - 32
+  - 64
+  - 128
+  - 128
+  kernel_size: 5
+  activation: gelu
+  head_hidden: 128
+  targets:
+  - ln_k
+  - ln_alpha
+  - ln_G_c
+  logvar_bounds:
+  - -14.0
+  - 4.0
+loss:
+  type: beta_nll
+  beta: 0.5
+  weights:
+    ln_k: 1.0
+    ln_alpha: 0.5
+    ln_G_c: 0.2
+optim:
+  name: adamw
+  lr: 0.001
+  weight_decay: 0.0001
+  schedule: cosine
+  warmup_epochs: 2
+  grad_clip: 1.0
+train:
+  batch_size: 32
+  max_epochs: 60
+  early_stopping:
+    metric: val_nll_ln_k
+    patience: 8
+  amp: cuda_only
+  num_workers: 8
+  seeds:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5

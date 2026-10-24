@@ -7,7 +7,7 @@ This repository holds the device's **analysis software**:
 - the classic TPS solution (M0),
 - a neural network (M2) that estimates thermal conductivity (k), thermal diffusivity (α) and contact conductance, each with an uncertainty.
 
-> **Confidentiality.** This repository is proprietary software; see [LICENSE](LICENSE). Trained model weights, ONNX files, normalisation statistics, generated data and measurement data are **not included**. They are kept in separate private storage.
+> **Confidentiality.** This is a private repository of proprietary software; see [LICENSE](LICENSE). It includes the trained model weights (`runs/*/best.pt`, `last.pt`), the ONNX exports and normalisers (`models/m2_v1/`) and the small pilot data. The full synthetic dataset (several GB) stays on Google Drive and can be regenerated from the seeds in `configs/dataset_v1.yaml`.
 
 ## Status
 
@@ -50,7 +50,8 @@ tests/          pytest (every physics function has a test)
 notebooks/      Google Colab runner
 reports/        phase reports and figures
 docs/           progress log, design decisions, Colab guide, project brief
-models/         model cards only (weights are not in the repository)
+models/         released models: ONNX exports, normalisers, trust thresholds, model cards
+runs/           every training run: PyTorch weights (best.pt, last.pt with full training history), normaliser, curves
 ```
 
 ## Setup (Windows, PowerShell)

@@ -6,7 +6,7 @@ Do the work in the phases below. At the end of each phase: run the tests, write 
 
 ```
 tps-meter/
-├── PROJECT_RULES.md
+├── docs/PROJECT_RULES.md
 ├── README.md
 ├── pyproject.toml
 ├── .gitignore                  # data/, runs/, .venv/, *.h5, *.pt

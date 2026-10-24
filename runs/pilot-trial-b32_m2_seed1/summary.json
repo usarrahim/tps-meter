@@ -1,0 +1,43 @@
+{
+  "best_epoch": 35,
+  "epochs_run": 40,
+  "seed": 1,
+  "device": "cuda:0 NVIDIA GeForce RTX 3050 Ti Laptop GPU (4.0 GB)",
+  "n_params": 375078,
+  "git": {
+    "commit": "HEAD",
+    "dirty": true
+  },
+  "code_hash": "c50cd3160776bc374ed56be8f6822d41e9ae8a8808d7b2ce5abb609594310c21",
+  "train_file": "C:\\Users\\raheem\\Desktop\\workspaces\\tps-master\\data\\synthetic\\v1\\pilot.h5",
+  "val_file": "C:\\Users\\raheem\\Desktop\\workspaces\\tps-master\\data\\synthetic\\v1\\pilot.h5 (dev split 0.9)",
+  "n_train": 900,
+  "n_val": 100,
+  "amp": true,
+  "amp_dtype": "torch.bfloat16",
+  "torch": "2.11.0+cu128",
+  "num_workers": 8,
+  "best": {
+    "epoch": 35,
+    "train_loss": -0.11098235579473632,
+    "lr": 2.709137914968268e-05,
+    "time_train_s": 0.8337032000126783,
+    "time_total_s": 0.9572488000267185,
+    "val_loss": -0.10321569442749023,
+    "val_nll_ln_k": -1.829766869544983,
+    "val_med_rel_err_ln_k": 0.018470346927642822,
+    "val_p95_rel_err_ln_k": 0.14101490378379822,
+    "val_cov68_ln_k": 0.800000011920929,
+    "val_cov95_ln_k": 0.9599999785423279,
+    "val_nll_ln_alpha": -0.5347721576690674,
+    "val_med_rel_err_ln_alpha": 0.09880760312080383,
+    "val_p95_rel_err_ln_alpha": 0.2835823893547058,
+    "val_cov68_ln_alpha": 0.6399999856948853,
+    "val_cov95_ln_alpha": 0.9599999785423279,
+    "val_nll_ln_G_c": -0.2275862693786621,
+    "val_med_rel_err_ln_G_c": 0.12801873683929443,
+    "val_p95_rel_err_ln_G_c": 0.4487515985965729,
+    "val_cov68_ln_G_c": 0.6499999761581421,
+    "val_cov95_ln_G_c": 0.9399999976158142
+  }
+}

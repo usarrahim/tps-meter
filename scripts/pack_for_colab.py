@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 INCLUDE_DIRS = ["src", "configs", "scripts", "tests", "notebooks", "docs"]
-INCLUDE_FILES = ["pyproject.toml", "README.md", "PROJECT_RULES.md"]
+INCLUDE_FILES = ["pyproject.toml", "README.md"]
 SKIP_PARTS = {"__pycache__", ".ipynb_checkpoints", ".pytest_cache"}
 
 

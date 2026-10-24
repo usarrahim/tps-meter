@@ -1,0 +1,18 @@
+{
+  "seed": 1,
+  "device": "cuda:0 NVIDIA GeForce RTX 3050 Ti Laptop GPU (4.0 GB)",
+  "n_params": 61910,
+  "git": {
+    "commit": "HEAD",
+    "dirty": true
+  },
+  "code_hash": "84905de5cebba6a2bd730bcc2a324fd42acc2ac6c1c30516f71307bb88f6415e",
+  "train_file": "C:\\Users\\raheem\\Desktop\\workspaces\\tps-master\\data\\synthetic\\v1\\pilot.h5",
+  "val_file": "C:\\Users\\raheem\\Desktop\\workspaces\\tps-master\\data\\synthetic\\v1\\pilot.h5 (dev split 0.9)",
+  "n_train": 900,
+  "n_val": 100,
+  "amp": true,
+  "amp_dtype": "torch.bfloat16",
+  "torch": "2.11.0+cu128",
+  "num_workers": 4
+}

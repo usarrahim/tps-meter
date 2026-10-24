@@ -1,0 +1,74 @@
+{
+  "fitted_on": "val (contact asymmetry <= max_asym)",
+  "thresholds": {
+    "tail": 0.0056726082831494605,
+    "upper": {
+      "total_std": 0.09259754460013321,
+      "m0_m2": 0.26559717041642633,
+      "m0_resid": 0.00017585866967865537,
+      "epistemic_ln_k": 0.013062824715515457,
+      "epistemic_ln_alpha": 0.025861739184847368,
+      "epistemic_ln_G_c": 0.03997009841871141
+    },
+    "range": {
+      "ln_k": [
+        -2.967702222369834,
+        3.36548843126691
+      ],
+      "ln_alpha": [
+        -18.13313743507273,
+        -10.72681728997018
+      ],
+      "ln_G_c": [
+        6.9971353529078755,
+        9.541811037060516
+      ]
+    },
+    "val_false_alarm": 0.049959492303537675,
+    "budget": 0.05
+  },
+  "dT_range_K": [
+    0.5,
+    8.0
+  ],
+  "variance_scale": {
+    "ln_k": 0.8976174295260035,
+    "ln_alpha": 0.5890150709122426,
+    "ln_G_c": 0.9738623467759164
+  },
+  "config": {
+    "units": "SI",
+    "dT_range_K": [
+      0.5,
+      8.0
+    ],
+    "v1": {
+      "quantile": 0.99
+    },
+    "v2": {
+      "false_alarm_budget": 0.05,
+      "range_targets": [
+        "ln_k",
+        "ln_alpha",
+        "ln_G_c"
+      ],
+      "epistemic_targets": [
+        "ln_k",
+        "ln_alpha",
+        "ln_G_c"
+      ],
+      "tail_search": [
+        1e-05,
+        0.5
+      ]
+    },
+    "variance_scale": {
+      "levels": [
+        0.5,
+        0.68,
+        0.9,
+        0.95
+      ]
+    }
+  }
+}

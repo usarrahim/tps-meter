@@ -112,10 +112,13 @@ These results are the **second use** of the test sets (the first was Phase 6). T
 
 ## Files
 
-| File | Description | Git |
-|---|---|---|
-| `m2_ensemble.onnx` | 5-member ensemble + normalisation (7.6 MB) | no (Drive: `tps-meter/phase6_bundle.zip`) |
-| `m2c_compact.onnx` | 2-member compact device model (0.5 MB) | no |
-| `normalizer_v1sym_m2_seed*.json` | Member normalisations (from train only) | no (model file, confidential) |
-| `trust_v2.json` | Trust v2 thresholds and variance scale (from val) | no (Drive: `tps-meter/phase6_trust_bundle.zip`) |
-| PyTorch weights | Drive: `tps-meter/runs/v1sym_m2_seed*/best.pt`, `v1c_m2c_seed*/best.pt` | no |
+All files are in this (private) repository.
+
+| File | Description |
+|---|---|
+| `models/m2_v1/m2_ensemble.onnx` | 5-member ensemble + normalisation (7.6 MB) |
+| `models/m2_v1/m2c_compact.onnx` | 2-member compact device model (0.5 MB) |
+| `models/m2_v1/normalizer_v1sym_m2_seed*.json` | Member normalisations (from train only) |
+| `models/m2_v1/trust_v2.json` | Trust v2 thresholds and variance scale (from val) |
+| `runs/v1sym_m2_seed*/`, `runs/v1c_m2c_seed*/` | PyTorch weights: `best.pt` (weights + config), `last.pt` (optimiser state + per-epoch metrics), normaliser, learning curve. Needed for fine-tuning on real data. |
+| `runs/ablation_m2_seed1/`, `runs/v1_m2_seed1/`, `runs/n10k_m2_seed1/`, `runs/n25k_m2_seed1/`, `runs/trial_m2_seed1/` | Ablation and development runs |
